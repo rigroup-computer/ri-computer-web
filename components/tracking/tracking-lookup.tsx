@@ -4,6 +4,7 @@ import { useState } from "react";
 import Image from "next/image";
 import {
   lookupOrderByTrackingId,
+  lookupOrdersByPhone,
   type PublicOrderView,
 } from "@/lib/actions/tracking";
 import { serviceStatusLabel } from "@/lib/service-status-label";
@@ -168,6 +169,7 @@ function OrderCard({
 
 export function TrackingLookup({ shopWhatsApp }: { shopWhatsApp?: string }) {
   const [trackingQuery, setTrackingQuery] = useState("");
+  const [phoneQuery, setPhoneQuery] = useState("");
   const [result, setResult] = useState<PublicOrderView | null>(null);
   const [results, setResults] = useState<PublicOrderView[]>([]);
   const [error, setError] = useState<string | null>(null);
@@ -208,19 +210,21 @@ export function TrackingLookup({ shopWhatsApp }: { shopWhatsApp?: string }) {
         </div>
       </section>
 
-      {/* <section className="space-y-2">
-        <h2 className="text-xs font-semibold uppercase tracking-wide text-slate-500">Nomor WhatsApp</h2>
+      <section className="space-y-2">
+        <h2 className="text-xs font-semibold uppercase tracking-wide text-slate-500">
+          Nomor WhatsApp
+        </h2>
         <div className="flex gap-2">
           <input
             value={phoneQuery}
             onChange={(event) => setPhoneQuery(event.target.value)}
-            placeholder="Nomor terdaftar"
-            className="min-w-0 flex-1 rounded-xl border border-slate-300 px-4 py-3 text-sm outline-none ring-blue-600 focus:ring-2"
+            placeholder="Nomor yang dipakai saat booking"
+            className="min-w-0 flex-1 rounded-sm border border-mate-black/10 px-4 py-3 text-sm outline-none ring-primary/50 focus:ring-1"
           />
           <button
             type="button"
             disabled={pending}
-            className="h-12 shrink-0 rounded-xl bg-blue-600 px-4 text-sm font-semibold text-white shadow-sm disabled:opacity-70"
+            className="h-12 shrink-0 rounded-sm bg-primary px-4 text-sm font-semibold text-white shadow-sm disabled:opacity-70"
             onClick={async () => {
               setPending(true);
               setError(null);
@@ -228,7 +232,9 @@ export function TrackingLookup({ shopWhatsApp }: { shopWhatsApp?: string }) {
               try {
                 const orders = await lookupOrdersByPhone(phoneQuery);
                 setResults(orders);
-                setError(orders.length ? null : "Tidak ada data dengan pola nomor tersebut.");
+                setError(
+                  orders.length ? null : "Tidak ada data dengan pola nomor tersebut.",
+                );
               } finally {
                 setPending(false);
               }
@@ -237,7 +243,7 @@ export function TrackingLookup({ shopWhatsApp }: { shopWhatsApp?: string }) {
             Cari
           </button>
         </div>
-      </section> */}
+      </section>
 
       {error ? (
         <p className="text-sm font-medium text-red-600">{error}</p>
