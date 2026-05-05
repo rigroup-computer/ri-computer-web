@@ -19,6 +19,7 @@ export default async function SectionSellComponent() {
     specs:
       unit.specs.length > 120 ? `${unit.specs.slice(0, 120)}…` : unit.specs,
     priceLabel: formatIdr(unit.price),
+    imageUrl: unit.imageUrl,
   }));
 
   const fallbacks =

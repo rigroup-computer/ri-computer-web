@@ -1,3 +1,4 @@
+import Image from "next/image";
 import Link from "next/link";
 
 export type MarketPreviewItem = {
@@ -5,6 +6,7 @@ export type MarketPreviewItem = {
   title: string;
   specs: string;
   priceLabel: string;
+  imageUrl?: string | null;
 };
 
 export function MarketHorizontalStrip({ items }: { items: MarketPreviewItem[] }) {
@@ -16,8 +18,21 @@ export function MarketHorizontalStrip({ items }: { items: MarketPreviewItem[] })
     <div className="-mx-4 flex gap-3 overflow-x-auto scrollbar-hide px-4 pb-1">
       {items.map((item) => (
         <div key={item.id} className="w-52 shrink-0 rounded-md bg-white shadow-sm">
-          <div className="flex aspect-4/3 items-center justify-center rounded-t-md bg-linear-to-b from-[#f7f7f7] to-transparent text-xl text-white">
-            💻
+          <div className="relative aspect-4/3 overflow-hidden rounded-t-md bg-linear-to-b from-[#f7f7f7] to-[#ececec]">
+            {item.imageUrl ? (
+              <Image
+                src={item.imageUrl}
+                alt={item.title}
+                fill
+                className="object-cover"
+                sizes="208px"
+                unoptimized
+              />
+            ) : (
+              <div className="flex h-full items-center justify-center text-xl">
+                💻
+              </div>
+            )}
           </div>
           <div className="space-y-2 p-3">
             <p className="text-sm font-semibold leading-snug text-mate-black">{item.title}</p>
