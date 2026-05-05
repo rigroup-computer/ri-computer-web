@@ -1,3 +1,5 @@
+import Image from "next/image";
+import { InventoryFormSubmitButton } from "@/components/admin/inventory-form-submit";
 import { prisma } from "@/lib/prisma";
 import { formatIdr } from "@/lib/format-idr";
 import { createInventoryItem, deleteInventoryItem, setInventoryPublish } from "@/lib/actions/admin-inventory";
@@ -16,19 +18,19 @@ export default async function AdminInventoryPage() {
         <p className="text-sm text-slate-600">Unit toko menggunakan kontak resmi Listing titip wajib nomor konsumen saat tayang.</p>
       </div>
 
-      <section className="rounded-2xl border border-slate-200 bg-white p-5 shadow-sm">
+      <section className="max-w-full overflow-hidden rounded-2xl border border-slate-200 bg-white p-5 shadow-sm">
         <h2 className="text-sm font-semibold text-slate-900">Buat Listing</h2>
-        <form action={createInventoryItem} encType="multipart/form-data" className="mt-4 grid gap-3">
-          <input name="title" required className="h-11 rounded-xl border border-slate-300 px-3 text-sm" placeholder="Judul laptop" />
-          <input name="price" type="number" min="1" step="1" required className="h-11 rounded-xl border border-slate-300 px-3 text-sm" placeholder="Harga (IDR)" />
-          <textarea name="specs" required className="min-h-28 rounded-xl border border-slate-300 px-3 py-2 text-sm" placeholder="Ringkasan spesifikasi" />
-          <label className="grid gap-1 text-sm">
+        <form action={createInventoryItem} className="mt-4 grid max-w-full gap-3">
+          <input name="title" required className="h-11 w-full min-w-0 rounded-xl border border-slate-300 px-3 text-sm" placeholder="Judul laptop" />
+          <input name="price" type="number" min="1" step="1" required className="h-11 w-full min-w-0 rounded-xl border border-slate-300 px-3 text-sm" placeholder="Harga (IDR)" />
+          <textarea name="specs" required className="min-h-28 w-full min-w-0 rounded-xl border border-slate-300 px-3 py-2 text-sm" placeholder="Ringkasan spesifikasi" />
+          <label className="grid max-w-full gap-1 text-sm">
             <span className="font-medium text-slate-800">Foto listing (opsional)</span>
             <input
               name="image"
               type="file"
               accept="image/jpeg,image/png,image/webp,image/gif"
-              className="min-h-11 rounded-xl border border-slate-300 px-2 py-2 text-sm file:mr-2 file:rounded-lg file:border-0 file:bg-slate-100 file:px-3 file:py-1.5 file:text-sm file:font-medium"
+              className="min-h-11 w-full min-w-0 rounded-xl border border-slate-300 px-2 py-2 text-sm file:mr-2 file:max-w-[min(100%,12rem)] file:truncate file:rounded-lg file:border-0 file:bg-slate-100 file:px-3 file:py-1.5 file:text-sm file:font-medium"
             />
             <span className="text-xs text-slate-500">JPG, PNG, WebP, atau GIF · maks. 5 MB · unggah ke folder Cloudinary terpisah dari foto keluhan booking.</span>
           </label>
@@ -36,14 +38,12 @@ export default async function AdminInventoryPage() {
             <input type="checkbox" name="isConsignment" className="h-4 w-4" />
             Titip Jual · kontak WhatsApp mengarah pemilik.
           </label>
-          <input name="ownerContact" className="h-11 rounded-xl border border-slate-300 px-3 text-sm" placeholder="WhatsApp pemilik (wajib jika Titip)" />
+          <input name="ownerContact" className="h-11 w-full min-w-0 rounded-xl border border-slate-300 px-3 text-sm" placeholder="WhatsApp pemilik (wajib jika Titip)" />
           <label className="flex items-center gap-2 text-sm">
             <input type="checkbox" name="isPublished" className="h-4 w-4" />
             Publikasikan ke katalog
           </label>
-          <button type="submit" className="h-12 rounded-xl bg-blue-600 text-sm font-semibold text-white shadow-sm">
-            Simpan Listing
-          </button>
+          <InventoryFormSubmitButton />
         </form>
       </section>
 
@@ -62,14 +62,22 @@ export default async function AdminInventoryPage() {
                 {item.isPublished ? "Live" : "Draft"}
               </span>
             </div>
-            {item.imageUrl ? (
-              <p className="mt-2 text-xs text-slate-500">
-                Foto:{" "}
-                <a href={item.imageUrl} target="_blank" rel="noreferrer" className="font-medium text-blue-600 underline">
-                  buka di Cloudinary
-                </a>
-              </p>
-            ) : null}
+            <div className="relative mt-3 aspect-[16/10] w-full overflow-hidden rounded-xl bg-slate-100">
+              {item.imageUrl ? (
+                <Image
+                  src={item.imageUrl}
+                  alt={`Foto ${item.title}`}
+                  fill
+                  className="object-cover"
+                  sizes="(max-width: 672px) 100vw, 672px"
+                  unoptimized
+                />
+              ) : (
+                <div className="absolute inset-0 flex items-center justify-center text-xs text-slate-500">
+                  Tanpa foto
+                </div>
+              )}
+            </div>
             <p className="mt-3 text-sm text-slate-700">{item.specs}</p>
             {item.ownerContact ? <p className="text-xs text-slate-600">WA: {item.ownerContact}</p> : null}
             <div className="mt-4 flex flex-wrap gap-2">

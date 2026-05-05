@@ -13,11 +13,11 @@ export default async function AdminProtectedLayout({
   }
 
   return (
-    <div className="min-h-screen h-screen pb-0">
-      <header className="sticky top-0 z-50 border-b border-white/10 bg-[#244673] shadow-sm shadow-black/10">
+    <div className="flex min-h-screen flex-col">
+      <header className="sticky top-0 z-50 shrink-0 border-b border-white/10 bg-[#244673] shadow-sm shadow-black/10">
         <AdminHeader />
       </header>
-      <div className="mx-auto max-w-2xl bg-primary/5 h-full px-4 py-6">
+      <div className="mx-auto w-full min-w-0 max-w-2xl flex-1 overflow-x-hidden bg-primary/5 px-4 py-6 pb-28">
         {children}
       </div>
       <AdminBottomNav />
