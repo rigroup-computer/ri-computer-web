@@ -1,0 +1,41 @@
+# Project: Service Booking & Marketplace (Next.js 16)
+# Role: Lead Fullstack Developer (Specialized in Next.js 16 & Mobile UI)
+
+## Context & Vision
+Platform mobile-first (PWA) untuk janji kunjungan teknisi (Home Service), pantau status servis, serta katalog laptop titip jual + stok toko. Pelanggan **tanpa login**; konten serta status dikelola lewat konsol admin bersandi.
+
+## MVP Publik (Sementara)
+- **Booking:** jalur utama **Home Service** (nama, HP, lokasi/jadwal, data perangkat, keluhan, dsb.).
+- **Tracking:** Tracking ID atau nomor HP (+ timeline/stepper seperti desain aplikasi mobile).
+- **Katalog laptop:** Listing titip (dimediasi admin) atau stok Ri Computer Kontak WhatsApp mengikuti sumber posting.
+- **Jalur lain (drop-off/antar‑jemput)**: ditampilkan sebagai kartu masa depan/placeholder jika MVP belum menghidupkannya lagi.
+
+## Sumber Kebenaran Visual (penting)
+- File `public/images/ui/design-web.jpeg` adalah **acuan pola UI lengkap**: hero biru putih header + bottom-tab tiga akses (Beranda/Booking/Status), kartu servis bertumpuk biru menyala, blok “Kenapa Ri Computer?” ber-icon, serta panel informasi lokasi/jam seperti mockup aplikasi Ri Computer.**Jangan mempublikasikan file itu sebagai satu-satunya “gambar besar” pengganti pemetaan Tailwind/HTML** tetapi **implementasikan struktur/interaksi/visual token** secara eksplisit di kode seperti yang digambarkan oleh mock tersebut.
+- Ikon/logo produksi: `public/images/brand/`.
+- Pertahankan aksesibilitas (focus ring minimal 44px target sentuh).
+
+## Tech Stack (Strict)
+- Framework: Next.js 16 (App Router).
+- Bahasa: TypeScript strict tanpa `any`.
+- Basis data: PostgreSQL (Neon) + Prisma.
+- Tailwind (+ Shadcn bila digunakan) mobile-first (`min-height` tombol utama ≥ 44px).
+- State klien: Zustand bila dibutuhkan (filter dll.).
+- Mutasi: Server Actions + validasi Zod.
+
+## Rules Inti
+1. **Zero-auth pelanggan** — Tidak boleh login pelanggan; gunakan Tracking ID + Local Storage sesuai kebutuhan.
+2. **Admin terlindungi** — Hanya akses konsol `/admin` setelah **`/admin/login`** memverifikasi `ADMIN_PASSWORD`; sesi=httpOnly cookie yang ditanda `ADMIN_SESSION_SECRET`. **Tanpa tautan apa pun dari UI pelanggan** (header hamburger boleh memuat tautan konsumen tetapi bukan konsol internal).
+3. **Server Actions Admin** selalu validasi sesi bertanda (`requireAdminSession`) sebelum mutasi sensitif (order, timeline, inventaris).
+4. **WA routing** sama seperti sebelumnya: titip konsumen ⇢ `ownerContact`; stok toko ⇢ `SHOP_WHATSAPP_NUMBER`.
+5. **SEO & robot:** metadata publik lengkap (`NEXT_PUBLIC_SITE_URL`); blok indeks konsol `/admin`; sitemap menyertakan jalur konsumen utama.
+6. **Observabilitas (later):** Sentry + PostHog — aktifkan setelah MVP stabil sesuai catatan backlog.
+
+## Urutan Pengembangan
+1. Data model + konsol admin (Orders + Inventory) — **gunakan login bukan jalur rahasia berganda**.
+2. UI publik (hero/beranda kartu seperti mock, formulir Booking, Tracking stepper).
+
+## Coding Style & Referensi Dokumen
+- Default RSC, `'use client'` hanya ketika ada interaksi.
+- Revalidate jalur konsumen utama setelah mutasi publik; revalidate konsol `/admin/*` setelah mutasi admin.
+- Patuhi `@PRD_ServiceBooking_V2.md`, skema `schema.prisma`, dan komponen UI yang sudah mengikuti mock `design-web.jpeg`.

@@ -1,0 +1,22 @@
+@import "tailwindcss";
+@import "tailwind-scrollbar-hide/v4";
+
+@theme {
+  --color-primary: #2563eb;
+  --color-primary-dark: #1d4ed8;
+  --color-secondary: #eb4625;
+  --color-mate-black: #202124;
+}
+
+:root {
+  --ri-primary: #2563eb;
+  --ri-primary-dark: #1d4ed8;
+  --background: #f8fafc;
+  --foreground: #0f172a;
+}
+
+body {
+  background: var(--background);
+  color: var(--foreground);
+  font-family: Inter, ui-sans-serif, system-ui, -apple-system, sans-serif;
+}

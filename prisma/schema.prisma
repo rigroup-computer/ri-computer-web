@@ -1,0 +1,63 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+enum ServiceType {
+  REGULAR
+  DELIVERY
+  HOME_SERVICE
+}
+
+enum ServiceStatus {
+  RECEIVED
+  CHECKING
+  REPAIRING
+  READY
+  COMPLETED
+}
+
+model ServiceOrder {
+  id                 String          @id @default(cuid())
+  trackingId         String          @unique
+  customerName       String
+  customerPhone      String
+  laptopBrand        String?
+  laptopModel        String?
+  issue                  String
+  issueAttachmentUrls   Json?
+  visitAddress           String          @default("")
+  preferredVisitAt   DateTime?
+  serviceType        ServiceType      @default(HOME_SERVICE)
+  status             ServiceStatus    @default(RECEIVED)
+  timelines          ServiceTimeline[]
+  createdAt          DateTime         @default(now())
+  updatedAt          DateTime         @updatedAt
+}
+
+model ServiceTimeline {
+  id             String   @id @default(cuid())
+  serviceOrderId String
+  title          String
+  note           String?
+  createdAt      DateTime @default(now())
+
+  serviceOrder ServiceOrder @relation(fields: [serviceOrderId], references: [id], onDelete: Cascade)
+}
+
+model InventoryItem {
+  id            String   @id @default(cuid())
+  title         String
+  price         BigInt
+  specs         String
+  imageUrl      String?
+  isConsignment Boolean  @default(false)
+  ownerContact  String?
+  isPublished   Boolean  @default(true)
+  createdAt     DateTime @default(now())
+  updatedAt     DateTime @updatedAt
+}
