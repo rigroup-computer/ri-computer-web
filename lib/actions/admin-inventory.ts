@@ -2,6 +2,11 @@
 
 import { revalidatePath } from "next/cache";
 import { z } from "zod";
+import { assertBookingUploadFile } from "@/lib/booking-issue-attachments";
+import {
+  configureCloudinary,
+  uploadImageBufferToFolder,
+} from "@/lib/cloudinary-image-upload";
 import { prisma } from "@/lib/prisma";
 import { requireAdminSession } from "@/lib/admin-session";
 
@@ -40,14 +45,15 @@ export async function createInventoryItem(formData: FormData) {
 
   await requireAdminSession();
 
-  const rawImage = formData.get("imageUrl")?.toString().trim() ?? "";
   let imageUrl: string | null = null;
-  if (rawImage.length > 0) {
-    const urlParse = z.string().url().safeParse(rawImage);
-    if (!urlParse.success) {
-      throw new Error("URL gambar tidak valid.");
-    }
-    imageUrl = rawImage;
+  const uploadField = formData.get("image");
+
+  if (uploadField instanceof File && uploadField.size > 0) {
+    assertBookingUploadFile(uploadField);
+    configureCloudinary();
+    const buffer = Buffer.from(await uploadField.arrayBuffer());
+    const folder = process.env.CLOUDINARY_INVENTORY_FOLDER ?? "inventory-listings";
+    imageUrl = await uploadImageBufferToFolder(buffer, folder);
   }
 
   if (parsed.data.isConsignment && parsed.data.isPublished && !parsed.data.ownerContact?.trim()) {
