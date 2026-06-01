@@ -1,9 +1,13 @@
 import type { Metadata } from "next";
 import "./globals.css";
-import { BottomNav } from "@/components/navigation/bottom-nav";
 import { PublicShell } from "@/components/layout/public-shell";
+import { SiteFooter } from "@/components/layout/site-footer";
 import { AppToaster } from "@/components/ui/app-toaster";
 import { isPublicIndexingAllowed } from "@/lib/seo-indexing";
+import { whatsappHref } from "@/lib/whatsapp";
+
+const footerHelpMessage =
+  "Halo Ri Computer, saya butuh bantuan terkait servis laptop. Bisa dibantu?";
 
 export function generateMetadata(): Metadata {
   const indexable = isPublicIndexingAllowed();
@@ -40,12 +44,21 @@ export function generateMetadata(): Metadata {
 }
 
 export default function RootLayout({ children }: Readonly<{ children: React.ReactNode }>) {
+  const shopWa = process.env.SHOP_WHATSAPP_NUMBER?.trim() ?? "";
+  const instagramUrl = process.env.NEXT_PUBLIC_INSTAGRAM_URL?.trim() ?? "";
+  const waHref = whatsappHref(shopWa, footerHelpMessage);
+
   return (
     <html lang="id">
       <body>
-        <div className="mx-auto min-h-screen w-full max-w-md bg-[var(--background)]">
-          <PublicShell>{children}</PublicShell>
-          <BottomNav />
+        <div className="mx-auto min-h-screen w-full max-w-md lg:max-w-full bg-(--background)">
+          <PublicShell
+            footer={
+              <SiteFooter waHref={waHref} instagramUrl={instagramUrl} />
+            }
+          >
+            {children}
+          </PublicShell>
           <AppToaster />
         </div>
       </body>
