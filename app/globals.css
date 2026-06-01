@@ -6,6 +6,19 @@
   --color-primary-dark: #1d4ed8;
   --color-secondary: #eb4625;
   --color-mate-black: #202124;
+
+  /* Mobile-first breakpoints (below default `sm` at 640px) */
+  --breakpoint-mobile-s: 20rem; /* 320px */
+  --breakpoint-mobile-m: 23.4375rem; /* 375px */
+  --breakpoint-mobile-l: 26.5625rem; /* 425px */
+
+  /* Font sizes below default text-xs (0.75rem / 12px) */
+  --text-3xs: 0.5625rem; /* 9px */
+  --text-3xs--line-height: 0.75rem;
+  --text-2xs: 0.625rem; /* 10px */
+  --text-2xs--line-height: 0.875rem;
+  --text-xxs: 0.6875rem; /* 11px */
+  --text-xxs--line-height: 1rem;
 }
 
 :root {
@@ -31,4 +44,25 @@ body {
   select {
     font-size: 16px !important;
   }
+}
+
+.hide-scrollbar::-webkit-scrollbar {
+  display: none;
+}
+
+.hide-scrollbar {
+  -ms-overflow-style: none;
+  scrollbar-width: none;
+}
+
+.custom-shadow-sm {
+  box-shadow:
+    0 1px 3px 0 rgba(0, 0, 0, 0.05),
+    0 1px 2px 0 rgba(0, 0, 0, 0.03);
+}
+
+.custom-shadow-md {
+  box-shadow:
+    0 4px 6px -1px rgba(0, 0, 0, 0.05),
+    0 2px 4px -1px rgba(0, 0, 0, 0.03);
 }

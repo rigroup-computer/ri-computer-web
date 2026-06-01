@@ -1,5 +1,6 @@
 import SectionBannerComponent from "@/components/home/section-banner.component";
 import SectionBenefitStoreComponent from "@/components/home/section-benefit-store.component";
+import SectionCtaConsultationComponent from "@/components/home/section-cta-consultation.component";
 import SectionInfoStoreComponent from "@/components/home/section-info-store.component";
 import SectionServicesComponent from "@/components/home/section-services.component";
 import SectionSellComponent from "@/components/home/SectionSell/section-sell.component";
@@ -28,9 +29,11 @@ export default async function HomePage() {
 
       <SectionSellComponent />
 
+      <SectionInfoStoreComponent />
+
       <SectionBenefitStoreComponent />
 
-      <SectionInfoStoreComponent />
+      <SectionCtaConsultationComponent />
     </main>
   );
 }

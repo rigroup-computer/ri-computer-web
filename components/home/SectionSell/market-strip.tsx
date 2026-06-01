@@ -7,50 +7,89 @@ export type MarketPreviewItem = {
   specs: string;
   priceLabel: string;
   imageUrl?: string | null;
+  isNew?: boolean;
 };
 
-export function MarketHorizontalStrip({ items }: { items: MarketPreviewItem[] }) {
+export function MarketHorizontalStrip({
+  comingSoon = false,
+  items,
+}: {
+  comingSoon?: boolean;
+  items: MarketPreviewItem[];
+}) {
   if (!items.length) {
-    return <p className="text-center text-xs text-slate-500">Belum ada laptop dipublikasikan.</p>;
+    return (
+      <p className="text-center text-xs text-slate-500">
+        Belum ada laptop dipublikasikan.
+      </p>
+    );
   }
 
   return (
-    <div className="-mx-4 flex gap-3 overflow-x-auto scrollbar-hide px-4 pb-1">
-      {items.map((item) => (
-        <div key={item.id} className="w-52 shrink-0 rounded-md bg-white shadow-sm">
-          <div className="relative aspect-4/3 overflow-hidden rounded-t-md bg-linear-to-b from-[#f7f7f7] to-[#ececec]">
-            {item.imageUrl ? (
-              <Image
-                src={item.imageUrl}
-                alt={item.title}
-                fill
-                className="object-cover"
-                sizes="208px"
-                unoptimized
-              />
-            ) : (
-              <div className="flex h-full items-center justify-center text-xl">
-                💻
-              </div>
-            )}
-          </div>
-          <div className="space-y-2 p-3">
-            <p className="text-sm font-semibold leading-snug text-mate-black">{item.title}</p>
-            <p className="line-clamp-2 text-xs text-mate-black/70">{item.specs}</p>
-            <p className="text-sm mt-4 font-semibold text-mate-black">{item.priceLabel}</p>
-          </div>
-        </div>
-      ))}
+    <div className="scrollbar-hide overflow-x-auto lg:flex lg:h-full lg:w-8/12 lg:min-h-0 lg:flex-col">
+      <div className="flex w-max gap-3 lg:grid lg:h-full lg:w-full lg:grid-cols-2 lg:gap-10">
+        {items.map((item) => (
+          <article
+            key={item.id}
+            className="relative custom-shadow-sm first:ml-3 lg:first:ml-0 lg:last:mr-0 last:mr-3 w-[170px] shrink-0 overflow-hidden rounded-xl border border-[#DEDFE3] bg-white transition-shadow hover:shadow-lg md:w-[240px] lg:w-full"
+          >
+            <div className="absolute z-10 top-0 right-0 bg-[#1A73E8FF] px-2 py-0.5 text-3xs lg:text-xs font-bold text-white">
+              Coming Soon
+            </div>
+            <div className="relative h-28 bg-[#F4F4F6] md:h-40 lg:h-56 lg:w-full">
+              {item.imageUrl ? (
+                <Image
+                  src={item.imageUrl}
+                  alt={item.title}
+                  fill
+                  className={`object-cover ${comingSoon ? "grayscale" : ""}`}
+                  sizes="240px"
+                  unoptimized
+                />
+              ) : (
+                <div className="flex h-full items-center justify-center text-2xl">
+                  💻
+                </div>
+              )}
+              {item.isNew ? (
+                <span className="absolute left-2 top-2 rounded-md bg-white/90 px-2 py-0.5 text-[9px] font-bold text-mate-black">
+                  Baru
+                </span>
+              ) : null}
+            </div>
+            <div className="p-3">
+              <p className="mb-1 truncate text-[10px] lg:text-xs font-medium uppercase text-[#5A5F68]">
+                {item.specs}
+              </p>
+              <h3 className="mb-1 truncate text-sm lg:text-base font-bold text-mate-black">
+                {item.title}
+              </h3>
+
+              {/* Hide Price */}
+              {/* <p className="mb-3 text-sm font-bold text-primary">{item.priceLabel}</p> */}
+
+              {/* Hide Button Detail */}
+              {/* <Link
+              href="/marketplace"
+              className="inline-flex min-h-11 w-full items-center justify-center rounded-lg bg-[#F4F4F6] text-[11px] font-bold text-[#353940] hover:bg-gray-200 active:scale-[0.98]"
+            >
+              Lihat Detail
+            </Link> */}
+            </div>
+          </article>
+        ))}
+      </div>
     </div>
   );
 }
 
 export function MarketSeeAllLink() {
   return (
-    <div className="mt-4 text-center">
-      <Link href="/marketplace" className="text-sm font-semibold text-blue-600 hover:underline">
-        Lihat Semua →
-      </Link>
-    </div>
+    <Link
+      href="/marketplace"
+      className="inline-flex min-h-11 items-center text-xs font-semibold text-primary hover:underline md:text-sm"
+    >
+      Cek Stok
+    </Link>
   );
 }
