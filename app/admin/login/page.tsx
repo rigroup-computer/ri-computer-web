@@ -19,7 +19,7 @@ export default async function AdminLoginPage({ searchParams }: { searchParams: S
   const next = typeof params?.next === "string" ? params.next : undefined;
 
   return (
-    <main className="mx-auto flex min-h-screen max-w-md flex-col justify-center px-4 py-12">
+    <main className="mx-auto flex min-h-screen overflow-hidden max-w-md flex-col justify-center px-4 py-12 lg:min-h-screen lg:items-stretch lg:justify-center lg:px-6 lg:py-20">
       <AdminLoginForm nextPath={next} />
     </main>
   );
