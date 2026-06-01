@@ -1,10 +1,19 @@
 import Image from "next/image";
 import Link from "next/link";
+import { SiteHeaderDesktop } from "@/components/layout/site-header-desktop";
 import { SiteHeaderNav } from "@/components/layout/site-header-nav";
+import { whatsappHref } from "@/lib/whatsapp";
+
+const consultationMessage =
+  "Halo Ri Computer, saya ingin konsultasi kerusakan laptop. Bisa dibantu?";
 
 export function SiteHeader() {
+  const shopWa = process.env.SHOP_WHATSAPP_NUMBER?.trim() ?? "";
+  const waHref = whatsappHref(shopWa, consultationMessage);
+
   return (
-    <header className="fixed inset-x-0 top-0 z-[100] mx-auto w-full max-w-md border-b border-slate-200/80 bg-white pt-[env(safe-area-inset-top,0px)] shadow-sm">
+    <>
+      <header className="fixed lg:hidden inset-x-0 top-0 z-100 mx-auto w-full max-w-md border-b border-slate-200/80 bg-white pt-[env(safe-area-inset-top,0px)] shadow-sm">
       <div className="flex h-14 items-center justify-between gap-3 px-4">
         <Link
           href="/"
@@ -23,6 +32,8 @@ export function SiteHeader() {
         </Link>
         <SiteHeaderNav />
       </div>
-    </header>
+      </header>
+      <SiteHeaderDesktop waHref={waHref} />
+    </>
   );
 }
