@@ -15,7 +15,6 @@ enum ServiceType {
 
 enum ServiceStatus {
   RECEIVED
-  CHECKING
   REPAIRING
   READY
   COMPLETED
@@ -33,8 +32,10 @@ model ServiceOrder {
   visitAddress           String          @default("")
   preferredVisitAt   DateTime?
   serviceType        ServiceType      @default(HOME_SERVICE)
-  status             ServiceStatus    @default(RECEIVED)
-  timelines          ServiceTimeline[]
+  status                 ServiceStatus    @default(RECEIVED)
+  costConfirmationNote   String?
+  costLineItems          Json?
+  timelines              ServiceTimeline[]
   createdAt          DateTime         @default(now())
   updatedAt          DateTime         @updatedAt
 }
