@@ -1,4 +1,5 @@
 import Image from "next/image";
+import { redirect } from "next/navigation";
 import { InventoryFormSubmitButton } from "@/components/admin/inventory-form-submit";
 import { prisma } from "@/lib/prisma";
 import { formatIdr } from "@/lib/format-idr";
@@ -6,7 +7,14 @@ import { createInventoryItem, deleteInventoryItem, setInventoryPublish } from "@
 
 export const dynamic = "force-dynamic";
 
+/** Set true when re-enabling /admin/inventory in nav. */
+const INVENTORY_CONSOLE_ENABLED = false;
+
 export default async function AdminInventoryPage() {
+  if (!INVENTORY_CONSOLE_ENABLED) {
+    redirect("/admin");
+  }
+
   const items = await prisma.inventoryItem.findMany({
     orderBy: { createdAt: "desc" },
   });

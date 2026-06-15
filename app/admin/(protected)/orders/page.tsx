@@ -1,18 +1,25 @@
-import Link from "next/link";
 import type { Prisma } from "@prisma/client";
 
+import { AdminOrdersClient } from "@/components/admin/admin-orders-client";
+import type { AdminSerializedOrder } from "@/components/admin/orders/order-row-data";
+import { OrdersPageHeader } from "@/components/admin/orders/orders-page-header";
+import { resolveOrderUpdatedAt } from "@/components/admin/orders/order-row-data";
 import {
-  AdminOrdersClient,
-  type AdminSerializedOrder,
-} from "@/components/admin/admin-orders-client";
+  ordersStatusTabFromQuery,
+  serviceTypeFromJenisQuery,
+  statusWhereForOrdersTab,
+} from "@/lib/admin-order-status-display";
 import { normalizeStoredIssueAttachmentUrls } from "@/lib/booking-issue-attachments";
+import { parseStoredCostLineItems } from "@/lib/service-order-cost-items";
 import { prisma } from "@/lib/prisma";
 
 export const dynamic = "force-dynamic";
 
-type SearchParams = Promise<{ bagian?: string }>;
+type SearchParams = Promise<{
+  jenis?: string;
+  tab?: string;
+}>;
 
-/** Tipe baris selaras hasil query (hindari drift vs `GetPayload` di beberapa versi Prisma/IDE). */
 async function fetchOrdersWithTimelines(where: Prisma.ServiceOrderWhereInput) {
   return prisma.serviceOrder.findMany({
     where,
@@ -43,7 +50,13 @@ function serializeOrdersForClient(
     visitAddress: order.visitAddress,
     preferredVisitAt: order.preferredVisitAt?.toISOString() ?? null,
     status: order.status,
+    costConfirmationNote: order.costConfirmationNote,
+    costLineItems: parseStoredCostLineItems(order.costLineItems),
     createdAt: order.createdAt.toISOString(),
+    updatedAt: resolveOrderUpdatedAt(
+      order.updatedAt,
+      order.timelines.map((item) => item.createdAt),
+    ),
     timelines: order.timelines.map((item) => ({
       id: item.id,
       title: item.title,
@@ -53,89 +66,46 @@ function serializeOrdersForClient(
   }));
 }
 
+const EMPTY_MESSAGES: Record<string, string> = {
+  semua: "Belum ada pesanan servis.",
+  antrian: "Tidak ada pesanan di antrian.",
+  proses: "Tidak ada pesanan dalam proses.",
+  selesai: "Belum ada pesanan selesai.",
+};
+
 export default async function AdminOrdersPage({
   searchParams,
 }: Readonly<{
   searchParams: SearchParams;
 }>) {
   const params = await searchParams;
-  const bagian =
-    typeof params?.bagian === "string" && params.bagian === "selesai"
-      ? "selesai"
-      : "proses";
+  const activeTab = ordersStatusTabFromQuery(params?.tab);
+  const serviceTypeFilter = serviceTypeFromJenisQuery(
+    typeof params?.jenis === "string" ? params.jenis : undefined,
+  );
 
-  const ordersWhere =
-    bagian === "selesai"
-      ? { status: "COMPLETED" as const }
-      : { NOT: { status: "COMPLETED" as const } };
+  const tabStatusWhere = statusWhereForOrdersTab(activeTab);
+  const where: Prisma.ServiceOrderWhereInput = serviceTypeFilter
+    ? { AND: [tabStatusWhere, { serviceType: serviceTypeFilter }] }
+    : tabStatusWhere;
 
-  const [countProses, countSelesai, orders] = await Promise.all([
-    prisma.serviceOrder.count({
-      where: { NOT: { status: "COMPLETED" } },
-    }),
-    prisma.serviceOrder.count({ where: { status: "COMPLETED" } }),
-    fetchOrdersWithTimelines(ordersWhere),
-  ]);
-
-  const clientOrders = serializeOrdersForClient(orders);
+  const orders = await fetchOrdersWithTimelines(where);
+  const emptyMessage = EMPTY_MESSAGES[activeTab] ?? EMPTY_MESSAGES.semua;
 
   return (
-    <main className="space-y-6">
-      <div>
-        <h1 className="text-xl font-semibold text-slate-900">
-          Order Home Service
-        </h1>
-        <p className="text-sm text-slate-600">
-          Pelanggan hanya bisa melihat lewat aplikasi Tracking setelah Anda
-          memperbarui status.
-        </p>
-      </div>
+    <main className="space-y-3 lg:space-y-5">
+      <OrdersPageHeader
+        hasServiceTypeFilter={Boolean(serviceTypeFilter)}
+        jenisLabel={params?.jenis}
+      />
 
-      <nav
-        className="flex gap-1 rounded-xl bg-slate-100 p-1 text-sm font-medium"
-        aria-label="Filter order servis"
-      >
-        <Link
-          href="/admin/orders?bagian=proses"
-          scroll={false}
-          className={`min-h-11 flex-1 rounded-lg px-3 py-2.5 text-center transition-colors ${
-            bagian === "proses"
-              ? "bg-white text-slate-900 shadow-sm"
-              : "text-slate-600 active:bg-white/70"
-          }`}
-        >
-          Dalam proses
-          <span className="ml-1 tabular-nums text-slate-400">
-            ({countProses})
-          </span>
-        </Link>
-        <Link
-          href="/admin/orders?bagian=selesai"
-          scroll={false}
-          className={`min-h-11 flex-1 rounded-lg px-3 py-2.5 text-center transition-colors ${
-            bagian === "selesai"
-              ? "bg-white text-slate-900 shadow-sm"
-              : "text-slate-600 active:bg-white/70"
-          }`}
-        >
-          Selesai
-          <span className="ml-1 tabular-nums text-slate-400">
-            ({countSelesai})
-          </span>
-        </Link>
-      </nav>
-
-      <div className="space-y-4">
-        <AdminOrdersClient orders={clientOrders} />
-
-        {orders.length === 0 ? (
-          <p className="text-sm text-slate-600">
-            {bagian === "selesai"
-              ? "Belum ada order dengan status Selesai."
-              : "Tidak ada order dalam proses. Semua sedang kosong atau sudah ditandai Selesai."}
-          </p>
-        ) : null}
-      </div>
+      <AdminOrdersClient
+        orders={serializeOrdersForClient(orders)}
+        emptyMessage={emptyMessage}
+        activeTab={activeTab}
+        jenis={params?.jenis}
+        hasServiceTypeFilter={Boolean(serviceTypeFilter)}
+      />
     </main>
   );
 }
