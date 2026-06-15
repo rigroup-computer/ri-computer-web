@@ -25,6 +25,7 @@ type OrderListRowProps = Readonly<{
   order: OrderListRowData;
   isLast?: boolean;
   variant?: "dashboard" | "orders";
+  isSelected?: boolean;
   onClick?: () => void;
   href?: string;
 }>;
@@ -126,12 +127,13 @@ export function OrderListRow({
   order,
   isLast = false,
   variant = "dashboard",
+  isSelected = false,
   onClick,
   href,
 }: OrderListRowProps) {
   const rowClassName = `flex w-full items-center gap-3 px-4 active:bg-slate-50 ${
     variant === "orders" ? "min-h-[101px] py-4" : "min-h-11 py-3.5"
-  }`;
+  } ${isSelected ? "bg-[#f1f6fe]" : ""}`;
 
   const borderClass = isLast ? undefined : "border-b border-[#dee1e6]";
   const content =
@@ -161,6 +163,7 @@ export function OrderListRow({
         type="button"
         onClick={onClick}
         aria-label={orderRowAriaLabel(order)}
+        aria-selected={isSelected}
         className={`text-left ${rowClassName}`}
       >
         {content}

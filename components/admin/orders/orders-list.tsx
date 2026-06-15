@@ -4,12 +4,14 @@ import type { OrderListRowData } from "./order-row-data";
 type OrdersListProps = Readonly<{
   orders: OrderListRowData[];
   emptyMessage: string;
+  selectedId: string | null;
   onRowClick: (id: string) => void;
 }>;
 
 export function OrdersList({
   orders,
   emptyMessage,
+  selectedId,
   onRowClick,
 }: OrdersListProps) {
   if (orders.length === 0) {
@@ -32,6 +34,7 @@ export function OrdersList({
             order={order}
             variant="orders"
             isLast={index === orders.length - 1}
+            isSelected={selectedId === order.id}
             onClick={() => onRowClick(order.id)}
           />
         ))}
