@@ -1,11 +1,20 @@
 "use client";
 
-import { useEffect, useRef, useState, type ChangeEvent } from "react";
+import {
+  useCallback,
+  useEffect,
+  useRef,
+  useState,
+  useSyncExternalStore,
+  type ChangeEvent,
+} from "react";
+import { createPortal } from "react-dom";
+import { Icon } from "@iconify/react";
 import Link from "next/link";
 import { useSearchParams } from "next/navigation";
 import {
   createServiceOrder,
-  type CreateServiceOrderResult,
+  type CreateServiceOrderSuccess,
 } from "@/lib/actions/service-order";
 import { uploadBookingIssueImage } from "@/lib/actions/booking-issue-upload";
 import {
@@ -150,6 +159,75 @@ function ServiceCard({
   );
 }
 
+function IssueImageLightbox({
+  url,
+  onClose,
+}: {
+  url: string | null;
+  onClose: () => void;
+}) {
+  const mounted = useSyncExternalStore(
+    () => () => {},
+    () => true,
+    () => false,
+  );
+
+  useEffect(() => {
+    if (!url) {
+      return;
+    }
+    const onKey = (event: KeyboardEvent) => {
+      if (event.key === "Escape") {
+        onClose();
+      }
+    };
+    window.addEventListener("keydown", onKey);
+    const prevOverflow = document.body.style.overflow;
+    document.body.style.overflow = "hidden";
+    return () => {
+      window.removeEventListener("keydown", onKey);
+      document.body.style.overflow = prevOverflow;
+    };
+  }, [url, onClose]);
+
+  if (!url || !mounted) {
+    return null;
+  }
+
+  return createPortal(
+    <div
+      className="fixed inset-0 z-200"
+      role="dialog"
+      aria-modal="true"
+      aria-label="Preview lampiran fullscreen"
+    >
+      <button
+        type="button"
+        className="absolute inset-0 bg-black/90"
+        aria-label="Tutup preview"
+        onClick={onClose}
+      />
+      <button
+        type="button"
+        className="absolute right-3 top-3 z-1 flex size-11 touch-manipulation items-center justify-center rounded-full bg-white/15 text-2xl font-bold text-white active:bg-white/25"
+        aria-label="Tutup preview"
+        onClick={onClose}
+      >
+        ×
+      </button>
+      <div className="pointer-events-none absolute inset-0 z-1 flex items-center justify-center p-6">
+        {/* eslint-disable-next-line @next/next/no-img-element */}
+        <img
+          src={url}
+          alt="Lampiran keluhan"
+          className="max-h-[90dvh] max-w-[min(100%,92vw)] object-contain"
+        />
+      </div>
+    </div>,
+    document.body,
+  );
+}
+
 function DeviceFields({
   issueImageUrls,
   uploadingIssueImage,
@@ -167,6 +245,9 @@ function DeviceFields({
   onRemoveIssueImage: (url: string) => void;
   onPickIssueImage: () => void;
 }) {
+  const [previewUrl, setPreviewUrl] = useState<string | null>(null);
+  const closePreview = useCallback(() => setPreviewUrl(null), []);
+
   return (
     <fieldset className="space-y-3 bg-white py-4">
       <legend className="sr-only">Data Perangkat</legend>
@@ -273,10 +354,28 @@ function DeviceFields({
                     />
                     <button
                       type="button"
+                      aria-label="Lihat foto fullscreen"
+                      className="absolute left-1/2 top-1/2 z-10 flex size-10 -translate-x-1/2 -translate-y-1/2 touch-manipulation items-center justify-center rounded-full bg-black/45 text-white shadow-sm active:bg-black/60"
+                      onClick={() => setPreviewUrl(url)}
+                    >
+                      <Icon
+                        icon="mdi:arrow-expand"
+                        width={20}
+                        height={20}
+                        aria-hidden
+                      />
+                    </button>
+                    <button
+                      type="button"
                       aria-label="Hapus lampiran"
                       disabled={uploadingIssueImage}
-                      className="absolute right-1 top-1 flex size-8 touch-manipulation items-center justify-center rounded-full bg-black/55 text-sm font-bold text-white shadow-sm disabled:opacity-40"
-                      onClick={() => onRemoveIssueImage(url)}
+                      className="absolute right-1 top-1 z-20 flex size-8 touch-manipulation items-center justify-center rounded-full bg-black/55 text-sm font-bold text-white shadow-sm disabled:opacity-40"
+                      onClick={() => {
+                        onRemoveIssueImage(url);
+                        if (previewUrl === url) {
+                          setPreviewUrl(null);
+                        }
+                      }}
                     >
                       ×
                     </button>
@@ -284,6 +383,7 @@ function DeviceFields({
                 ))}
               </ul>
             ) : null}
+            <IssueImageLightbox url={previewUrl} onClose={closePreview} />
             <button
               type="button"
               disabled={
@@ -482,7 +582,7 @@ export function BookingForm({
   const [uploadingIssueImage, setUploadingIssueImage] = useState(false);
   const issueFileAccept = BOOKING_UPLOAD_ALLOWED_TYPES.join(",");
   const [pending, setPending] = useState(false);
-  const [success, setSuccess] = useState<CreateServiceOrderResult | null>(null);
+  const [success, setSuccess] = useState<CreateServiceOrderSuccess | null>(null);
   const urlServiceType = bookableTypeFromJenis(searchParams.get("jenis"));
   const [manualServiceType, setManualServiceType] = useState<
     "REGULAR" | "DELIVERY" | null
@@ -647,14 +747,14 @@ export function BookingForm({
             setPending(true);
             try {
               const outcome = await createServiceOrder(formData);
+              if (!outcome.ok) {
+                toast.error(outcome.error);
+                return;
+              }
               rememberTrackingId(outcome.trackingId);
               setSuccess(outcome);
-            } catch (err) {
-              const message =
-                err instanceof Error
-                  ? err.message
-                  : "Gagal mengirim formulir.";
-              toast.error(message);
+            } catch {
+              toast.error("Gagal mengirim formulir. Mohon coba lagi.");
             } finally {
               setPending(false);
             }

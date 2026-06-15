@@ -94,18 +94,25 @@ function timelineNoteForServiceType(serviceType: ServiceType): string {
   }
 }
 
-export type CreateServiceOrderResult = {
+export type CreateServiceOrderSuccess = {
   trackingId: string;
   shopWhatsApp?: string;
   serviceType: ServiceType;
 };
+
+export type CreateServiceOrderResult =
+  | ({ ok: true } & CreateServiceOrderSuccess)
+  | { ok: false; error: string };
 
 export async function createServiceOrder(
   formData: FormData,
 ): Promise<CreateServiceOrderResult> {
   const serviceTypeRaw = formData.get("serviceType");
   if (!isBookableServiceType(serviceTypeRaw)) {
-    throw new Error("Pilih jenis layanan yang tersedia terlebih dahulu.");
+    return {
+      ok: false,
+      error: "Pilih jenis layanan yang tersedia terlebih dahulu.",
+    };
   }
 
   const serviceType = serviceTypeRaw;
@@ -131,7 +138,7 @@ export async function createServiceOrder(
         });
 
   if (!parsed.success) {
-    throw new Error(bookingValidationMessage(parsed.error));
+    return { ok: false, error: bookingValidationMessage(parsed.error) };
   }
 
   let attachmentUrls: string[];
@@ -140,9 +147,11 @@ export async function createServiceOrder(
       formData.get("issueAttachmentUrls"),
     );
   } catch (err) {
-    throw new Error(
-      err instanceof Error ? err.message : "Data lampiran tidak valid.",
-    );
+    return {
+      ok: false,
+      error:
+        err instanceof Error ? err.message : "Data lampiran tidak valid.",
+    };
   }
 
   let trackingId = "";
@@ -156,7 +165,10 @@ export async function createServiceOrder(
       break;
     }
     if (attempt === 15) {
-      throw new Error("Sistem sibuk membuat nomor lacak. Mohon coba lagi.");
+      return {
+        ok: false,
+        error: "Sistem sibuk membuat nomor lacak. Mohon coba lagi.",
+      };
     }
   }
 
@@ -165,40 +177,48 @@ export async function createServiceOrder(
       ? (parsed.data as z.infer<typeof deliverySchema>).visitAddress
       : (parsed.data as z.infer<typeof regularSchema>).customerCity;
 
-  const order = await prisma.serviceOrder.create({
-    data: {
-      trackingId,
-      status: "RECEIVED",
-      serviceType,
-      customerName: parsed.data.customerName,
-      customerPhone: parsed.data.customerPhone,
-      laptopBrand: parsed.data.laptopBrand,
-      laptopModel: parsed.data.laptopModel,
-      issue: formatIssueWithSpecs(parsed.data.deviceSpecs, parsed.data.issue),
-      issueAttachmentUrls:
-        attachmentUrls.length > 0 ? attachmentUrls : undefined,
-      visitAddress,
-      preferredVisitAt: null,
-    } as Prisma.ServiceOrderUncheckedCreateInput,
-  });
+  try {
+    const order = await prisma.serviceOrder.create({
+      data: {
+        trackingId,
+        status: "RECEIVED",
+        serviceType,
+        customerName: parsed.data.customerName,
+        customerPhone: parsed.data.customerPhone,
+        laptopBrand: parsed.data.laptopBrand,
+        laptopModel: parsed.data.laptopModel,
+        issue: formatIssueWithSpecs(parsed.data.deviceSpecs, parsed.data.issue),
+        issueAttachmentUrls:
+          attachmentUrls.length > 0 ? attachmentUrls : undefined,
+        visitAddress,
+        preferredVisitAt: null,
+      } as Prisma.ServiceOrderUncheckedCreateInput,
+    });
 
-  await prisma.serviceTimeline.create({
-    data: {
-      serviceOrderId: order.id,
-      title: "Order diterima",
-      note: timelineNoteForServiceType(serviceType),
-    },
-  });
+    await prisma.serviceTimeline.create({
+      data: {
+        serviceOrderId: order.id,
+        title: "Order diterima",
+        note: timelineNoteForServiceType(serviceType),
+      },
+    });
 
-  revalidatePath("/admin");
-  revalidatePath("/admin/orders");
-  revalidatePath("/tracking");
+    revalidatePath("/admin");
+    revalidatePath("/admin/orders");
+    revalidatePath("/tracking");
 
-  const shopWa = process.env.SHOP_WHATSAPP_NUMBER ?? "";
+    const shopWa = process.env.SHOP_WHATSAPP_NUMBER ?? "";
 
-  return {
-    trackingId: order.trackingId,
-    shopWhatsApp: shopWa.length ? shopWa : undefined,
-    serviceType: order.serviceType,
-  };
+    return {
+      ok: true,
+      trackingId: order.trackingId,
+      shopWhatsApp: shopWa.length ? shopWa : undefined,
+      serviceType: order.serviceType,
+    };
+  } catch {
+    return {
+      ok: false,
+      error: "Gagal menyimpan booking. Mohon coba lagi.",
+    };
+  }
 }
