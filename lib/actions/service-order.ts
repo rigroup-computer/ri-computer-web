@@ -3,7 +3,7 @@
 import { revalidatePath } from "next/cache";
 import type { ZodError } from "zod";
 import { z } from "zod";
-import type { Prisma } from "@prisma/client";
+import type { Prisma, ServiceType } from "@prisma/client";
 import { parseIssueAttachmentUrlsFromFormField } from "@/lib/booking-issue-attachments";
 import { prisma } from "@/lib/prisma";
 import { generatePublicTrackingId } from "@/lib/tracking-id";
@@ -16,29 +16,40 @@ const emptyText = (raw: unknown) => {
   return trimmed.length ? trimmed : undefined;
 };
 
-const homeServiceSchema = z.object({
-  customerName: z.string().min(2),
-  customerPhone: z.string().min(8),
-  laptopBrand: z.preprocess(emptyText, z.string().max(120).optional()),
-  laptopModel: z.preprocess(emptyText, z.string().max(160).optional()),
-  issue: z.string().min(5),
-  visitAddress: z.string().min(5),
-  preferredVisitAt: z
-    .string()
-    .optional()
-    .transform((raw) => {
-      if (!raw || raw.trim().length === 0) {
-        return undefined;
-      }
-      const date = new Date(raw);
-      return Number.isNaN(date.getTime()) ? undefined : date;
-    }),
+const deviceFieldsSchema = z.object({
+  laptopBrand: z.string().trim().min(1).max(80),
+  laptopModel: z.string().trim().min(1).max(120),
+  deviceSpecs: z.string().trim().min(1).max(160),
+  issue: z.string().trim().min(5).max(2000),
 });
+
+const contactBaseSchema = z.object({
+  customerName: z.string().trim().min(2).max(100),
+  customerPhone: z.string().trim().min(8).max(20),
+});
+
+const deliverySchema = deviceFieldsSchema.merge(contactBaseSchema).extend({
+  visitAddress: z.string().trim().min(5).max(500),
+});
+
+const regularSchema = deviceFieldsSchema.merge(contactBaseSchema).extend({
+  customerCity: z.string().trim().min(2).max(100),
+});
+
+const SERVICE_TYPES = ["REGULAR", "DELIVERY"] as const;
+type BookableServiceType = (typeof SERVICE_TYPES)[number];
+
+function isBookableServiceType(raw: unknown): raw is BookableServiceType {
+  return (
+    typeof raw === "string" &&
+    (SERVICE_TYPES as readonly string[]).includes(raw)
+  );
+}
 
 function bookingValidationMessage(error: ZodError): string {
   const issue = error.issues[0];
   if (!issue) {
-    return "Mohon lengkapi data janji kunjungan dan keluhan Anda.";
+    return "Mohon lengkapi semua data yang wajib diisi.";
   }
   const key = issue.path[0];
   if (key === "issue") {
@@ -51,28 +62,73 @@ function bookingValidationMessage(error: ZodError): string {
     return "Mohon isi nomor WhatsApp yang valid (minimal 8 digit).";
   }
   if (key === "visitAddress") {
-    return "Mohon isi alamat kunjungan lengkap.";
+    return "Mohon isi alamat lengkap (minimal 5 karakter).";
   }
-  return "Mohon lengkapi data janji kunjungan dan keluhan Anda.";
+  if (key === "customerCity") {
+    return "Mohon isi asal kota (minimal 2 karakter).";
+  }
+  if (key === "laptopBrand") {
+    return "Mohon isi merek laptop.";
+  }
+  if (key === "laptopModel") {
+    return "Mohon isi tipe laptop.";
+  }
+  if (key === "deviceSpecs") {
+    return "Mohon isi prosesor dan VGA laptop.";
+  }
+  return "Mohon lengkapi semua data yang wajib diisi.";
+}
+
+function formatIssueWithSpecs(deviceSpecs: string, issue: string): string {
+  return `Prosesor & VGA: ${deviceSpecs}\n\n${issue}`;
+}
+
+function timelineNoteForServiceType(serviceType: ServiceType): string {
+  switch (serviceType) {
+    case "DELIVERY":
+      return "Antar Jemput — janji baru masuk sistem.";
+    case "REGULAR":
+      return "Datang ke Toko — janji baru masuk sistem.";
+    default:
+      return "Janji baru masuk sistem.";
+  }
 }
 
 export type CreateServiceOrderResult = {
   trackingId: string;
   shopWhatsApp?: string;
+  serviceType: ServiceType;
 };
 
 export async function createServiceOrder(
   formData: FormData,
 ): Promise<CreateServiceOrderResult> {
-  const parsed = homeServiceSchema.safeParse({
+  const serviceTypeRaw = formData.get("serviceType");
+  if (!isBookableServiceType(serviceTypeRaw)) {
+    throw new Error("Pilih jenis layanan yang tersedia terlebih dahulu.");
+  }
+
+  const serviceType = serviceTypeRaw;
+
+  const basePayload = {
     customerName: formData.get("customerName"),
     customerPhone: formData.get("customerPhone"),
-    laptopBrand: formData.get("laptopBrand")?.toString() ?? "",
-    laptopModel: formData.get("laptopModel")?.toString() ?? "",
+    laptopBrand: formData.get("laptopBrand"),
+    laptopModel: formData.get("laptopModel"),
+    deviceSpecs: formData.get("deviceSpecs"),
     issue: formData.get("issue"),
-    visitAddress: formData.get("visitAddress"),
-    preferredVisitAt: formData.get("preferredVisitAt")?.toString(),
-  });
+  };
+
+  const parsed =
+    serviceType === "DELIVERY"
+      ? deliverySchema.safeParse({
+          ...basePayload,
+          visitAddress: formData.get("visitAddress"),
+        })
+      : regularSchema.safeParse({
+          ...basePayload,
+          customerCity: formData.get("customerCity"),
+        });
 
   if (!parsed.success) {
     throw new Error(bookingValidationMessage(parsed.error));
@@ -104,24 +160,25 @@ export async function createServiceOrder(
     }
   }
 
+  const visitAddress =
+    serviceType === "DELIVERY"
+      ? (parsed.data as z.infer<typeof deliverySchema>).visitAddress
+      : (parsed.data as z.infer<typeof regularSchema>).customerCity;
+
   const order = await prisma.serviceOrder.create({
     data: {
       trackingId,
       status: "RECEIVED",
-      serviceType: "HOME_SERVICE",
+      serviceType,
       customerName: parsed.data.customerName,
       customerPhone: parsed.data.customerPhone,
-      laptopBrand: parsed.data.laptopBrand?.trim()
-        ? parsed.data.laptopBrand.trim()
-        : null,
-      laptopModel: parsed.data.laptopModel?.trim()
-        ? parsed.data.laptopModel.trim()
-        : null,
-      issue: parsed.data.issue,
+      laptopBrand: parsed.data.laptopBrand,
+      laptopModel: parsed.data.laptopModel,
+      issue: formatIssueWithSpecs(parsed.data.deviceSpecs, parsed.data.issue),
       issueAttachmentUrls:
         attachmentUrls.length > 0 ? attachmentUrls : undefined,
-      visitAddress: parsed.data.visitAddress,
-      preferredVisitAt: parsed.data.preferredVisitAt ?? null,
+      visitAddress,
+      preferredVisitAt: null,
     } as Prisma.ServiceOrderUncheckedCreateInput,
   });
 
@@ -129,7 +186,7 @@ export async function createServiceOrder(
     data: {
       serviceOrderId: order.id,
       title: "Order diterima",
-      note: "Home Service — janji baru masuk sistem.",
+      note: timelineNoteForServiceType(serviceType),
     },
   });
 
@@ -142,5 +199,6 @@ export async function createServiceOrder(
   return {
     trackingId: order.trackingId,
     shopWhatsApp: shopWa.length ? shopWa : undefined,
+    serviceType: order.serviceType,
   };
 }

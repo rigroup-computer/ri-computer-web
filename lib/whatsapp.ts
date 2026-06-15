@@ -1,5 +1,9 @@
 const digitsOnly = (value: string) => value.replace(/\D/gu, "");
 
+export function getShopWhatsAppNumber(): string {
+  return process.env.SHOP_WHATSAPP_NUMBER?.trim() ?? "";
+}
+
 export function normalizeWhatsAppTarget(value: string): string | null {
   let d = digitsOnly(value.trim());
   if (!d.length) return null;
