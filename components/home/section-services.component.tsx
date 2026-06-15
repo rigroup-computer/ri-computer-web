@@ -1,5 +1,9 @@
 import Image from "next/image";
 import Link from "next/link";
+import {
+  bookingPageHref,
+  homeServiceWhatsAppHref,
+} from "@/lib/booking-service-links";
 
 type ServiceCardProps = {
   icon: string;
@@ -9,6 +13,7 @@ type ServiceCardProps = {
   descriptionMobile: string;
   descriptionDesktop: string;
   href: string;
+  external?: boolean;
 };
 
 function ServiceCard({
@@ -19,14 +24,22 @@ function ServiceCard({
   descriptionMobile,
   descriptionDesktop,
   href,
+  external = false,
 }: ServiceCardProps) {
   const ctaClassName =
     "min-h-11 items-center gap-1 text-xs font-semibold text-primary group-hover:underline md:text-sm";
 
+  const linkProps = external
+    ? { target: "_blank" as const, rel: "noreferrer" }
+    : {};
+
+  const CardLink = external ? "a" : Link;
+
   return (
     <div className="custom-shadow-sm group flex h-full flex-col rounded-2xl border border-[#DEDFE3] bg-white p-4 text-center transition-shadow hover:shadow-md lg:gap-4 lg:rounded-3xl lg:p-8 lg:transition-transform lg:duration-300 lg:ease-in-out lg:hover:scale-105">
-      <Link
+      <CardLink
         href={href}
+        {...linkProps}
         className="flex flex-1 lg:gap-3 flex-col items-center lg:min-h-0 lg:items-start lg:text-left"
       >
         <div
@@ -53,15 +66,21 @@ function ServiceCard({
           <h3 className="text-xl font-semibold text-mate-black">{titleDesktop}</h3>
           <p className="text-sm leading-tight text-[#5A5F68AA]">{descriptionDesktop}</p>
         </div>
-      </Link>
-      <Link href={href} className={`${ctaClassName} mt-auto hidden lg:inline-flex`}>
+      </CardLink>
+      <CardLink
+        href={href}
+        {...linkProps}
+        className={`${ctaClassName} mt-auto hidden lg:inline-flex`}
+      >
         Booking Sekarang →
-      </Link>
+      </CardLink>
     </div>
   );
 }
 
 export default function SectionServicesComponent() {
+  const homeWaHref = homeServiceWhatsAppHref();
+
   return (
     <section
       id="layanan"
@@ -103,7 +122,7 @@ export default function SectionServicesComponent() {
           titleDesktop="Store Service"
           descriptionMobile="Perbaikan di gerai resmi"
           descriptionDesktop="Kunjungi gerai resmi kami untuk diagnosa instan dan perbaikan di tempat oleh tim teknisi profesional."
-          href="/booking"
+          href={bookingPageHref("store")}
         />
         <ServiceCard
           icon="/icons/svg-delivery-service.svg"
@@ -112,7 +131,7 @@ export default function SectionServicesComponent() {
           titleDesktop="Delivery Service"
           descriptionMobile="Antar jemput unit bermasalah"
           descriptionDesktop="Kesibukan bukan masalah. Kami jemput unit Anda yang bermasalah dan antar kembali setelah selesai."
-          href="/booking"
+          href={bookingPageHref("delivery")}
         />
         <ServiceCard
           icon="/icons/svg-home-service.svg"
@@ -121,7 +140,8 @@ export default function SectionServicesComponent() {
           titleDesktop="Home Service"
           descriptionMobile="Teknisi datang ke rumah Anda"
           descriptionDesktop="Teknisi kami akan datang langsung ke rumah atau kantor Anda untuk perbaikan perangkat secara real-time."
-          href="/booking"
+          href={homeWaHref ?? "/booking"}
+          external={Boolean(homeWaHref)}
         />
       </div>
     </section>

@@ -1,10 +1,7 @@
-import { prisma } from "@/lib/prisma";
 import {
   MarketHorizontalStrip,
   MarketPreviewItem,
-  MarketSeeAllLink,
 } from "./market-strip";
-import { formatIdr } from "@/lib/format-idr";
 import Link from "next/link";
 
 const dummyItems: MarketPreviewItem[] = [
@@ -42,29 +39,7 @@ const dummyItems: MarketPreviewItem[] = [
   },
 ];
 
-export default async function SectionSellComponent() {
-  const published = await prisma.inventoryItem.findMany({
-    where: { isPublished: true },
-    orderBy: { updatedAt: "desc" },
-    take: 8,
-  });
-
-  const marketItems: MarketPreviewItem[] = published.map((unit, index) => ({
-    id: unit.id,
-    title: unit.title,
-    specs: unit.specs.length > 48 ? `${unit.specs.slice(0, 48)}…` : unit.specs,
-    priceLabel: formatIdr(unit.price),
-    imageUrl: unit.imageUrl,
-    isNew: index === 0,
-  }));
-
-  // ===== Activated Later =====
-  // const fallbacks: MarketPreviewItem[] =
-  //   marketItems.length === 0 ? dummyItems : [];
-  // const isInventoryEmpty = marketItems.length === 0;
-  // const inventoryItems = isInventoryEmpty ? fallbacks : marketItems;
-  // ==========================
-
+export default function SectionSellComponent() {
   const inventoryItems = dummyItems;
 
   return (

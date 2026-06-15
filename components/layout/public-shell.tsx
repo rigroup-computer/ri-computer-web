@@ -3,11 +3,17 @@
 import { usePathname } from "next/navigation";
 import { BottomNav } from "@/components/navigation/bottom-nav";
 import { SiteHeader } from "./site-header";
+import { WhatsAppFloat } from "./whatsapp-float";
 
 export function PublicShell({
   children,
   footer,
-}: Readonly<{ children: React.ReactNode; footer: React.ReactNode }>) {
+  consultationWaHref,
+}: Readonly<{
+  children: React.ReactNode;
+  footer: React.ReactNode;
+  consultationWaHref: string | null;
+}>) {
   const pathname = usePathname();
 
   if (pathname?.startsWith("/admin")) {
@@ -24,6 +30,7 @@ export function PublicShell({
       {children}
       {footer}
       <BottomNav />
+      <WhatsAppFloat waHref={consultationWaHref} />
     </>
   );
 }
