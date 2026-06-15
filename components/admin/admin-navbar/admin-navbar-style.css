@@ -1,0 +1,41 @@
+.icon-bundle {
+  display: inline-block;
+  flex-shrink: 0;
+  width: 24px;
+  height: 24px;
+  overflow: hidden;
+  background-image: url("/icons/ic-navbar-mobile-bundle.svg");
+  background-size: 96px 48px;
+  background-repeat: no-repeat;
+}
+
+/*
+ * Sprite 96×48 → 4 kolom × 2 baris (24px/cell)
+ * col0 grid | col1 clipboard | col2 package | col3 settings
+ * baris atas abu, baris bawah biru (aktif)
+ */
+.icon-bundle--c0 {
+  background-position: 0 0;
+}
+.icon-bundle--c1 {
+  background-position: -24px 0;
+}
+.icon-bundle--c2 {
+  background-position: -48px 0;
+}
+.icon-bundle--c3 {
+  background-position: -72px 0;
+}
+
+.icon-bundle--c0.icon-bundle--active {
+  background-position: 0 -24px;
+}
+.icon-bundle--c1.icon-bundle--active {
+  background-position: -24px -24px;
+}
+.icon-bundle--c2.icon-bundle--active {
+  background-position: -48px -24px;
+}
+.icon-bundle--c3.icon-bundle--active {
+  background-position: -72px -24px;
+}

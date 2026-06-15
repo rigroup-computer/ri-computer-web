@@ -10,6 +10,7 @@ import {
 import { serviceStatusLabel } from "@/lib/service-status-label";
 import { whatsappHref } from "@/lib/whatsapp";
 import { ServiceProgress } from "@/components/tracking/service-progress";
+import { Icon } from "@iconify/react";
 
 function formatDt(value: string | Date | null) {
   if (!value) {
@@ -26,6 +27,11 @@ function serviceTypeLabel(raw: string) {
     default:
       return raw;
   }
+}
+
+function isTrackingIdQuery(raw: string): boolean {
+  const trimmed = raw.trim().replace(/\s+/g, "");
+  return /^RC-/i.test(trimmed);
 }
 
 function OrderCard({
@@ -168,77 +174,57 @@ function OrderCard({
 }
 
 export function TrackingLookup({ shopWhatsApp }: { shopWhatsApp?: string }) {
-  const [trackingQuery, setTrackingQuery] = useState("");
-  const [phoneQuery, setPhoneQuery] = useState("");
+  const [query, setQuery] = useState("");
   const [result, setResult] = useState<PublicOrderView | null>(null);
   const [results, setResults] = useState<PublicOrderView[]>([]);
   const [error, setError] = useState<string | null>(null);
   const [pending, setPending] = useState(false);
 
+  const trimmedQuery = query.trim();
+  const canSearch = trimmedQuery.length > 0 && !pending;
+
+  async function handleSearch() {
+    if (!trimmedQuery) {
+      return;
+    }
+
+    setPending(true);
+    setError(null);
+    setResult(null);
+    setResults([]);
+
+    try {
+      if (isTrackingIdQuery(trimmedQuery)) {
+        const order = await lookupOrderByTrackingId(trimmedQuery);
+        setResult(order);
+        setError(order ? null : "Data tidak ditemukan.");
+      } else {
+        const orders = await lookupOrdersByPhone(trimmedQuery);
+        setResults(orders);
+        setError(
+          orders.length ? null : "Tidak ada data dengan nomor WhatsApp / ID Tracking tersebut.",
+        );
+      }
+    } finally {
+      setPending(false);
+    }
+  }
+
   return (
     <div className="mt-6 space-y-5">
       <section className="space-y-2">
-        <h2 className="text-xs font-semibold uppercase tracking-wide text-slate-500">
-          Tracking ID
-        </h2>
-        <div className="flex gap-2">
+        <div className="flex flex-col lg:flex-row gap-2">
           <input
-            value={trackingQuery}
-            onChange={(event) => setTrackingQuery(event.target.value)}
-            placeholder="Tempel Tracking ID Anda"
-            className="min-w-0 flex-1 rounded-sm border border-mate-black/10 px-4 py-3 text-sm outline-none ring-primary/50 focus:ring-1"
+            value={query}
+            onChange={(event) => setQuery(event.target.value)}
+            placeholder="Tracking ID (RC-...) atau nomor WhatsApp"
+            className="w-full rounded-sm border border-mate-black/10 px-4 py-3 text-sm outline-none ring-primary/50 focus:ring-1"
           />
           <button
             type="button"
-            disabled={pending}
-            className="h-12 shrink-0 rounded-sm bg-primary px-4 text-sm font-semibold text-white shadow-sm disabled:opacity-70"
-            onClick={async () => {
-              setPending(true);
-              setError(null);
-              setResults([]);
-              try {
-                const order = await lookupOrderByTrackingId(trackingQuery);
-                setResult(order);
-                setError(order ? null : "Data tidak ditemukan.");
-              } finally {
-                setPending(false);
-              }
-            }}
-          >
-            Cari
-          </button>
-        </div>
-      </section>
-
-      <section className="space-y-2">
-        <h2 className="text-xs font-semibold uppercase tracking-wide text-slate-500">
-          Nomor WhatsApp
-        </h2>
-        <div className="flex gap-2">
-          <input
-            value={phoneQuery}
-            onChange={(event) => setPhoneQuery(event.target.value)}
-            placeholder="Nomor yang dipakai saat booking"
-            className="min-w-0 flex-1 rounded-sm border border-mate-black/10 px-4 py-3 text-sm outline-none ring-primary/50 focus:ring-1"
-          />
-          <button
-            type="button"
-            disabled={pending}
-            className="h-12 shrink-0 rounded-sm bg-primary px-4 text-sm font-semibold text-white shadow-sm disabled:opacity-70"
-            onClick={async () => {
-              setPending(true);
-              setError(null);
-              setResult(null);
-              try {
-                const orders = await lookupOrdersByPhone(phoneQuery);
-                setResults(orders);
-                setError(
-                  orders.length ? null : "Tidak ada data dengan pola nomor tersebut.",
-                );
-              } finally {
-                setPending(false);
-              }
-            }}
+            disabled={!canSearch}
+            className="h-12 w-full lg:w-auto rounded-sm bg-primary px-4 text-sm font-semibold text-white shadow-sm disabled:opacity-70"
+            onClick={handleSearch}
           >
             Cari
           </button>
@@ -252,7 +238,43 @@ export function TrackingLookup({ shopWhatsApp }: { shopWhatsApp?: string }) {
       <div className="space-y-8 pb-24">
         {result ? (
           <OrderCard order={result} shopWhatsApp={shopWhatsApp} />
-        ) : null}
+        ) : (
+          <div className="lg:mt-14">
+            <div className="flex items-center gap-2">
+              <Icon
+                icon="mingcute:question-line"
+                width={26}
+                height={26}
+                aria-hidden
+                className="text-[#1A73E8FF]"
+              />
+              <p className="font-semibold text-base text-[#171a1f] uppercase">
+                Butuh Bantuan?
+              </p>
+            </div>
+            <div className="my-4 bg-[#F1F7FEFF] p-4 rounded-md flex flex-row gap-2">
+              <div className="bg-[#E6F2FFFF] size-fit shrink-0 rounded-xl p-2">
+                <Icon
+                  icon="iconamoon:shield-yes-light"
+                  width={26}
+                  height={26}
+                  aria-hidden
+                  className="text-[#1A73E8FF]"
+                />
+              </div>
+              <div className="">
+                <h3 className="text-sm font-semibold text-[#171a1f]">
+                  Nomor Service Tidak Ditemukan?
+                </h3>
+                <p className="text-sm text-slate-600">
+                  Pastikan Anda memasukkan nomor yang benar. Nomor service
+                  biasanya diawali dengan kode &quot;RC&quot;.
+                </p>
+              </div>
+            </div>
+          </div>
+        )}
+
         {results.map((order) => (
           <OrderCard
             key={order.trackingId}

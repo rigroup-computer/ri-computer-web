@@ -1,0 +1,26 @@
+.icon-process {
+  display: inline-block;
+  flex-shrink: 0;
+  width: 12px;
+  height: 12px;
+  overflow: hidden;
+  background-image: url("/icons/ic-process.svg");
+  background-size: 38px 12px;
+  background-repeat: no-repeat;
+}
+
+/*
+ * Sprite 38×12 → 3 kolom 12px + 1px gap
+ * antrian (clock) | selesai (check) | proses (wrench)
+ */
+.icon-process--antrian {
+  background-position: 0 0;
+}
+
+.icon-process--selesai {
+  background-position: -13px 0;
+}
+
+.icon-process--proses {
+  background-position: -26px 0;
+}
