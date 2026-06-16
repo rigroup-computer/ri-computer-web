@@ -221,82 +221,86 @@ export function TrackingLookup({ shopWhatsApp }: { shopWhatsApp?: string }) {
     <div className="mt-6 space-y-5">
       <section className="space-y-2">
         <div className="flex flex-col lg:flex-row gap-2">
-          <div className="relative w-full">
-            <input
-              ref={inputRef}
-              value={query}
-              onChange={(event) => setQuery(event.target.value)}
-              onFocus={() => setIsInputFocused(true)}
-              onClick={() => setIsInputFocused(true)}
-              onBlur={() => setIsInputFocused(false)}
-              placeholder="Tracking ID (RC-...) atau nomor WhatsApp"
-              className={`w-full rounded-sm border border-mate-black/10 py-3 text-sm outline-none ring-primary/50 focus:ring-1 ${
-                query ? "pl-4 pr-11" : "px-4"
-              }`}
-            />
-            {query ? (
-              <button
-                type="button"
-                aria-label="Hapus pencarian"
-                onMouseDown={(event) => event.preventDefault()}
-                onClick={() => {
-                  setQuery("");
-                  setResult(null);
-                  setResults([]);
-                  setError(null);
-                  inputRef.current?.focus();
-                }}
-                className="absolute right-1 top-1/2 inline-flex size-10 -translate-y-1/2 items-center justify-center rounded-sm text-slate-400 hover:text-slate-600"
-              >
-                <Icon
-                  icon="material-symbols:close-rounded"
-                  width={22}
-                  height={22}
-                  aria-hidden
-                />
-              </button>
+          <div className="w-full flex flex-col gap-1.5">
+            <div className="relative w-full">
+              <input
+                ref={inputRef}
+                value={query}
+                onChange={(event) => setQuery(event.target.value)}
+                onFocus={() => setIsInputFocused(true)}
+                onClick={() => setIsInputFocused(true)}
+                onBlur={() => setIsInputFocused(false)}
+                placeholder="Tracking ID (RC-...) atau nomor WhatsApp"
+                className={`w-full rounded-sm border border-mate-black/10 py-3 text-sm outline-none ring-primary/50 focus:ring-1 ${
+                  query ? "pl-4 pr-11" : "px-4"
+                }`}
+              />
+              {query ? (
+                <button
+                  type="button"
+                  aria-label="Hapus pencarian"
+                  onMouseDown={(event) => event.preventDefault()}
+                  onClick={() => {
+                    setQuery("");
+                    setResult(null);
+                    setResults([]);
+                    setError(null);
+                    inputRef.current?.focus();
+                  }}
+                  className="absolute right-1 top-1/2 inline-flex size-10 -translate-y-1/2 items-center justify-center rounded-sm text-slate-400 hover:text-slate-600"
+                >
+                  <Icon
+                    icon="material-symbols:close-rounded"
+                    width={22}
+                    height={22}
+                    aria-hidden
+                  />
+                </button>
+              ) : null}
+            </div>
+            {isInputFocused && savedTrackingIds.length > 0 ? (
+              <div className="space-y-2">
+                <p className="text-xs font-medium text-slate-500">
+                  Tracking ID tersimpan
+                </p>
+                <div className="flex flex-col gap-2">
+                  {savedTrackingIds.map((entry) => (
+                    <button
+                      key={entry.trackingId}
+                      type="button"
+                      disabled={pending}
+                      onMouseDown={(event) => event.preventDefault()}
+                      onClick={() => {
+                        void handleSearch(entry.trackingId);
+                        inputRef.current?.blur();
+                      }}
+                      className="flex items-center justify-between gap-3 rounded-sm border border-mate-black/10 bg-slate-50 px-3 py-2 text-left text-sm transition-colors hover:border-primary/30 hover:bg-primary/5 disabled:opacity-70"
+                    >
+                      <span className="font-mono font-semibold text-slate-900">
+                        {entry.trackingId}
+                      </span>
+                      <span className="shrink-0 text-xs text-slate-500">
+                        {entry.createdAt
+                          ? new Date(entry.createdAt).toLocaleDateString(
+                              "id-ID",
+                              {
+                                day: "2-digit",
+                                month: "short",
+                                year: "numeric",
+                              },
+                            )
+                          : "-"}
+                      </span>
+                    </button>
+                  ))}
+                </div>
+              </div>
             ) : null}
           </div>
-          {isInputFocused && savedTrackingIds.length > 0 ? (
-            <div className="space-y-2">
-              <p className="text-xs font-medium text-slate-500">
-                Tracking ID tersimpan
-              </p>
-              <div className="flex flex-col gap-2">
-                {savedTrackingIds.map((entry) => (
-                  <button
-                    key={entry.trackingId}
-                    type="button"
-                    disabled={pending}
-                    onMouseDown={(event) => event.preventDefault()}
-                    onClick={() => {
-                      void handleSearch(entry.trackingId);
-                      inputRef.current?.blur();
-                    }}
-                    className="flex items-center justify-between gap-3 rounded-sm border border-mate-black/10 bg-slate-50 px-3 py-2 text-left text-sm transition-colors hover:border-primary/30 hover:bg-primary/5 disabled:opacity-70"
-                  >
-                    <span className="font-mono font-semibold text-slate-900">
-                      {entry.trackingId}
-                    </span>
-                    <span className="shrink-0 text-xs text-slate-500">
-                      {entry.createdAt
-                        ? new Date(entry.createdAt).toLocaleDateString("id-ID", {
-                            day: "2-digit",
-                            month: "short",
-                            year: "numeric",
-                          })
-                        : "-"}
-                 
-                    </span>
-                  </button>
-                ))}
-              </div>
-            </div>
-          ) : null}
           <button
             type="button"
             disabled={!canSearch}
-            className="h-12 w-full lg:w-auto mt-5 rounded-sm bg-primary px-4 text-sm font-semibold text-white shadow-sm disabled:opacity-70"
+            className="h-12 w-full lg:w-auto mt-5 lg:mt-0 rounded-sm bg-primary px-4 text-sm font-semibold text-white shadow-sm disabled:opacity-70"
             onClick={() => void handleSearch()}
           >
             Cari
