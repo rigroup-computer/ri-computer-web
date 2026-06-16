@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useRef, useState } from "react";
 import Image from "next/image";
 import {
   lookupOrderByTrackingId,
@@ -8,6 +8,8 @@ import {
   type PublicOrderView,
 } from "@/lib/actions/tracking";
 import { serviceStatusLabel } from "@/lib/service-status-label";
+import { serviceTypeAdminLabel } from "@/lib/admin-order-status-display";
+import { useSavedTrackingIds } from "@/lib/use-saved-tracking-ids";
 import { whatsappHref } from "@/lib/whatsapp";
 import { ServiceProgress } from "@/components/tracking/service-progress";
 import { Icon } from "@iconify/react";
@@ -21,12 +23,10 @@ function formatDt(value: string | Date | null) {
 }
 
 function serviceTypeLabel(raw: string) {
-  switch (raw) {
-    case "HOME_SERVICE":
-      return "Home Service";
-    default:
-      return raw;
+  if (raw === "REGULAR" || raw === "DELIVERY" || raw === "HOME_SERVICE") {
+    return serviceTypeAdminLabel(raw);
   }
+  return raw;
 }
 
 function isTrackingIdQuery(raw: string): boolean {
@@ -179,30 +179,37 @@ export function TrackingLookup({ shopWhatsApp }: { shopWhatsApp?: string }) {
   const [results, setResults] = useState<PublicOrderView[]>([]);
   const [error, setError] = useState<string | null>(null);
   const [pending, setPending] = useState(false);
+  const [isInputFocused, setIsInputFocused] = useState(false);
+  const inputRef = useRef<HTMLInputElement>(null);
+  const savedTrackingIds = useSavedTrackingIds();
 
   const trimmedQuery = query.trim();
   const canSearch = trimmedQuery.length > 0 && !pending;
 
-  async function handleSearch() {
-    if (!trimmedQuery) {
+  async function handleSearch(searchQuery = query) {
+    const q = searchQuery.trim();
+    if (!q) {
       return;
     }
 
+    setQuery(q);
     setPending(true);
     setError(null);
     setResult(null);
     setResults([]);
 
     try {
-      if (isTrackingIdQuery(trimmedQuery)) {
-        const order = await lookupOrderByTrackingId(trimmedQuery);
+      if (isTrackingIdQuery(q)) {
+        const order = await lookupOrderByTrackingId(q);
         setResult(order);
         setError(order ? null : "Data tidak ditemukan.");
       } else {
-        const orders = await lookupOrdersByPhone(trimmedQuery);
+        const orders = await lookupOrdersByPhone(q);
         setResults(orders);
         setError(
-          orders.length ? null : "Tidak ada data dengan nomor WhatsApp / ID Tracking tersebut.",
+          orders.length
+            ? null
+            : "Tidak ada data dengan nomor WhatsApp / ID Tracking tersebut.",
         );
       }
     } finally {
@@ -214,17 +221,83 @@ export function TrackingLookup({ shopWhatsApp }: { shopWhatsApp?: string }) {
     <div className="mt-6 space-y-5">
       <section className="space-y-2">
         <div className="flex flex-col lg:flex-row gap-2">
-          <input
-            value={query}
-            onChange={(event) => setQuery(event.target.value)}
-            placeholder="Tracking ID (RC-...) atau nomor WhatsApp"
-            className="w-full rounded-sm border border-mate-black/10 px-4 py-3 text-sm outline-none ring-primary/50 focus:ring-1"
-          />
+          <div className="relative w-full">
+            <input
+              ref={inputRef}
+              value={query}
+              onChange={(event) => setQuery(event.target.value)}
+              onFocus={() => setIsInputFocused(true)}
+              onClick={() => setIsInputFocused(true)}
+              onBlur={() => setIsInputFocused(false)}
+              placeholder="Tracking ID (RC-...) atau nomor WhatsApp"
+              className={`w-full rounded-sm border border-mate-black/10 py-3 text-sm outline-none ring-primary/50 focus:ring-1 ${
+                query ? "pl-4 pr-11" : "px-4"
+              }`}
+            />
+            {query ? (
+              <button
+                type="button"
+                aria-label="Hapus pencarian"
+                onMouseDown={(event) => event.preventDefault()}
+                onClick={() => {
+                  setQuery("");
+                  setResult(null);
+                  setResults([]);
+                  setError(null);
+                  inputRef.current?.focus();
+                }}
+                className="absolute right-1 top-1/2 inline-flex size-10 -translate-y-1/2 items-center justify-center rounded-sm text-slate-400 hover:text-slate-600"
+              >
+                <Icon
+                  icon="material-symbols:close-rounded"
+                  width={22}
+                  height={22}
+                  aria-hidden
+                />
+              </button>
+            ) : null}
+          </div>
+          {isInputFocused && savedTrackingIds.length > 0 ? (
+            <div className="space-y-2">
+              <p className="text-xs font-medium text-slate-500">
+                Tracking ID tersimpan
+              </p>
+              <div className="flex flex-col gap-2">
+                {savedTrackingIds.map((entry) => (
+                  <button
+                    key={entry.trackingId}
+                    type="button"
+                    disabled={pending}
+                    onMouseDown={(event) => event.preventDefault()}
+                    onClick={() => {
+                      void handleSearch(entry.trackingId);
+                      inputRef.current?.blur();
+                    }}
+                    className="flex items-center justify-between gap-3 rounded-sm border border-mate-black/10 bg-slate-50 px-3 py-2 text-left text-sm transition-colors hover:border-primary/30 hover:bg-primary/5 disabled:opacity-70"
+                  >
+                    <span className="font-mono font-semibold text-slate-900">
+                      {entry.trackingId}
+                    </span>
+                    <span className="shrink-0 text-xs text-slate-500">
+                      {entry.createdAt
+                        ? new Date(entry.createdAt).toLocaleDateString("id-ID", {
+                            day: "2-digit",
+                            month: "short",
+                            year: "numeric",
+                          })
+                        : "-"}
+                 
+                    </span>
+                  </button>
+                ))}
+              </div>
+            </div>
+          ) : null}
           <button
             type="button"
             disabled={!canSearch}
-            className="h-12 w-full lg:w-auto rounded-sm bg-primary px-4 text-sm font-semibold text-white shadow-sm disabled:opacity-70"
-            onClick={handleSearch}
+            className="h-12 w-full lg:w-auto mt-5 rounded-sm bg-primary px-4 text-sm font-semibold text-white shadow-sm disabled:opacity-70"
+            onClick={() => void handleSearch()}
           >
             Cari
           </button>

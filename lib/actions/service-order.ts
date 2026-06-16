@@ -1,83 +1,17 @@
 "use server";
 
 import { revalidatePath } from "next/cache";
-import type { ZodError } from "zod";
-import { z } from "zod";
+import type { z } from "zod";
 import type { Prisma, ServiceType } from "@prisma/client";
 import { parseIssueAttachmentUrlsFromFormField } from "@/lib/booking-issue-attachments";
+import {
+  bookingValidationMessage,
+  deliverySchema,
+  isBookableServiceType,
+  regularSchema,
+} from "@/lib/booking-form-validation";
 import { prisma } from "@/lib/prisma";
 import { generatePublicTrackingId } from "@/lib/tracking-id";
-
-const emptyText = (raw: unknown) => {
-  if (typeof raw !== "string") {
-    return undefined;
-  }
-  const trimmed = raw.trim();
-  return trimmed.length ? trimmed : undefined;
-};
-
-const deviceFieldsSchema = z.object({
-  laptopBrand: z.string().trim().min(1).max(80),
-  laptopModel: z.string().trim().min(1).max(120),
-  deviceSpecs: z.string().trim().min(1).max(160),
-  issue: z.string().trim().min(5).max(2000),
-});
-
-const contactBaseSchema = z.object({
-  customerName: z.string().trim().min(2).max(100),
-  customerPhone: z.string().trim().min(8).max(20),
-});
-
-const deliverySchema = deviceFieldsSchema.merge(contactBaseSchema).extend({
-  visitAddress: z.string().trim().min(5).max(500),
-});
-
-const regularSchema = deviceFieldsSchema.merge(contactBaseSchema).extend({
-  customerCity: z.string().trim().min(2).max(100),
-});
-
-const SERVICE_TYPES = ["REGULAR", "DELIVERY"] as const;
-type BookableServiceType = (typeof SERVICE_TYPES)[number];
-
-function isBookableServiceType(raw: unknown): raw is BookableServiceType {
-  return (
-    typeof raw === "string" &&
-    (SERVICE_TYPES as readonly string[]).includes(raw)
-  );
-}
-
-function bookingValidationMessage(error: ZodError): string {
-  const issue = error.issues[0];
-  if (!issue) {
-    return "Mohon lengkapi semua data yang wajib diisi.";
-  }
-  const key = issue.path[0];
-  if (key === "issue") {
-    return "Mohon jelaskan keluhan Anda (minimal 5 karakter).";
-  }
-  if (key === "customerName") {
-    return "Mohon isi nama lengkap (minimal 2 karakter).";
-  }
-  if (key === "customerPhone") {
-    return "Mohon isi nomor WhatsApp yang valid (minimal 8 digit).";
-  }
-  if (key === "visitAddress") {
-    return "Mohon isi alamat lengkap (minimal 5 karakter).";
-  }
-  if (key === "customerCity") {
-    return "Mohon isi asal kota (minimal 2 karakter).";
-  }
-  if (key === "laptopBrand") {
-    return "Mohon isi merek laptop.";
-  }
-  if (key === "laptopModel") {
-    return "Mohon isi tipe laptop.";
-  }
-  if (key === "deviceSpecs") {
-    return "Mohon isi prosesor dan VGA laptop.";
-  }
-  return "Mohon lengkapi semua data yang wajib diisi.";
-}
 
 function formatIssueWithSpecs(deviceSpecs: string, issue: string): string {
   return `Prosesor & VGA: ${deviceSpecs}\n\n${issue}`;

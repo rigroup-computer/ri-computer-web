@@ -22,7 +22,7 @@ export default function SectionTrackingPreviewComponent() {
         Pantau Perbaikan Secara Real-Time
       </h3>
       <p className="mb-8 text-sm leading-relaxed text-[#565d6d]">
-        Dengan fitur tracking Ri Computer, Anda bisa melihat setiap tahap perbaikan
+        Dengan fitur tracking Ri Group Computer, Anda bisa melihat setiap tahap perbaikan
         laptop langsung dari aplikasi kami.
       </p>
 
