@@ -2,6 +2,7 @@ import type { Metadata } from "next";
 import { prisma } from "@/lib/prisma";
 import { MarketplaceInventoryCards, type ListedInventoryCard } from "@/components/marketplace/inventory-cards";
 import { getShopWhatsAppNumber } from "@/lib/whatsapp";
+import { redirect } from "next/navigation";
 
 export const dynamic = "force-dynamic";
 
@@ -28,6 +29,8 @@ export default async function MarketplacePage() {
         whatsappPhone: shopWa,
       }))
     : [];
+
+  redirect("/");
 
   return (
     <main className="px-4 pb-28 pt-6">
