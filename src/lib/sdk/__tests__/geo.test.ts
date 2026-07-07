@@ -35,7 +35,7 @@ describe("geoSdk.reverseGeocode", () => {
 describe("geoSdk.searchAddresses", () => {
   it("delegates to nominatim search", async () => {
     vi.mocked(searchNominatimAddresses).mockResolvedValue([
-      { label: "Jakarta", lat: -6.2, lng: 106.8 },
+      { displayName: "Jakarta", lat: -6.2, lng: 106.8 },
     ]);
 
     const results = await geoSdk.searchAddresses("jakarta");

@@ -29,3 +29,9 @@ export {
   marketplaceSdk,
   type InventoryPreviewItem,
 } from "@/src/lib/sdk/marketplace";
+
+export {
+  rateLimitSdk,
+  type RateLimitOptions,
+  type RateLimitResult,
+} from "@/src/lib/sdk/rate-limit";
