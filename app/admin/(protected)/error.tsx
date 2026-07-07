@@ -1,14 +1,10 @@
 "use client";
 
 import { useEffect } from "react";
-
-function looksLikeDatabaseUnreachable(message: string): boolean {
-  return (
-    /can't reach database|reach database server|P1001|connection refused|ECONNREFUSED|neon\.tech|timed out|ETIMEDOUT/i.test(
-      message,
-    )
-  );
-}
+import {
+  adminErrorTitle,
+  looksLikeDatabaseUnreachable,
+} from "@/lib/error-display";
 
 export default function AdminProtectedError({
   error,
@@ -27,7 +23,7 @@ export default function AdminProtectedError({
   return (
     <main className="mx-auto max-w-lg space-y-4 rounded-2xl border border-amber-200 bg-amber-50 px-4 py-6 text-slate-900 shadow-sm">
       <h1 className="text-lg font-semibold text-amber-950">
-        {dbHint ? "Tidak terhubung ke database" : "Ada masalah memuat halaman"}
+        {adminErrorTitle(message)}
       </h1>
       {dbHint ? (
         <div className="space-y-2 text-sm text-amber-950/90">
@@ -46,13 +42,13 @@ export default function AdminProtectedError({
         <button
           type="button"
           onClick={() => reset()}
-          className="h-11 rounded-xl bg-amber-800 px-4 text-sm font-semibold text-white shadow-sm"
+          className="min-h-11 rounded-xl bg-amber-800 px-4 text-sm font-semibold text-white shadow-sm"
         >
           Coba lagi
         </button>
         <a
           href="/admin"
-          className="inline-flex h-11 items-center rounded-xl border border-amber-300 bg-white px-4 text-sm font-semibold text-amber-950"
+          className="inline-flex min-h-11 items-center rounded-xl border border-amber-300 bg-white px-4 text-sm font-semibold text-amber-950"
         >
           Ke dasbor
         </a>

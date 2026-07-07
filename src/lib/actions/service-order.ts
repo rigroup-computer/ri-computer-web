@@ -12,6 +12,10 @@ import {
   regularSchema,
 } from "@/lib/booking-form-validation";
 import { combineVisitDateTime, formatVisitDateTimeId } from "@/lib/store-hours";
+import {
+  consumeActionRateLimit,
+  RATE_LIMIT_SCOPES,
+} from "@/lib/server-rate-limit";
 import { generatePublicTrackingId } from "@/lib/tracking-id";
 import {
   normalizePhoneForLookup,
@@ -52,6 +56,11 @@ export type CreateServiceOrderResult =
 export async function createServiceOrder(
   formData: FormData,
 ): Promise<CreateServiceOrderResult> {
+  const limited = await consumeActionRateLimit(RATE_LIMIT_SCOPES.createServiceOrder);
+  if (!limited.ok) {
+    return { ok: false, error: limited.error };
+  }
+
   const serviceTypeRaw = formData.get("serviceType");
   if (!isBookableServiceType(serviceTypeRaw)) {
     return {

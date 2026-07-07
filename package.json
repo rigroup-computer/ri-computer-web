@@ -6,6 +6,7 @@
     "dev": "next dev --turbopack",
     "dev:clean": "rm -rf .next && next dev --turbopack",
     "build": "prisma generate && next build",
+    "migrate:deploy": "prisma migrate deploy",
     "postinstall": "prisma generate",
     "start": "next start",
     "lint": "eslint",

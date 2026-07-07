@@ -1,6 +1,12 @@
 "use server";
 
 import { redirect } from "next/navigation";
+import {
+  checkActionRateLimit,
+  clearActionRateLimit,
+  RATE_LIMIT_SCOPES,
+  recordActionRateLimitHit,
+} from "@/lib/server-rate-limit";
 import { authSdk } from "@/src/lib/sdk/auth";
 
 export type LoginAdminState = {
@@ -21,13 +27,21 @@ export async function loginAdmin(
   _prev: LoginAdminState,
   formData: FormData,
 ): Promise<LoginAdminState> {
+  const limited = await checkActionRateLimit(RATE_LIMIT_SCOPES.adminLogin);
+  if (!limited.ok) {
+    return { error: limited.error };
+  }
+
   const passwordRaw = formData.get("password");
   const password = typeof passwordRaw === "string" ? passwordRaw : "";
 
   const verified = authSdk.verifyAdminPassword(password);
   if (!verified.ok) {
+    await recordActionRateLimitHit(RATE_LIMIT_SCOPES.adminLogin);
     return { error: verified.error };
   }
+
+  await clearActionRateLimit(RATE_LIMIT_SCOPES.adminLogin);
 
   try {
     await authSdk.setSession();
