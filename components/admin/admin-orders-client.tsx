@@ -19,7 +19,18 @@ import {
 } from "@/components/admin/orders/order-row-data";
 import { OrdersTable } from "@/components/admin/orders/orders-table";
 import { OrdersToolbar } from "@/components/admin/orders/orders-toolbar";
-import type { OrdersStatusTab } from "@/lib/admin-order-status-display";
+import { OrdersPagination } from "@/components/admin/orders/orders-pagination";
+import type { JenisQueryValue, OrdersStatusTab } from "@/lib/admin-order-status-display";
+import {
+  DEFAULT_ADMIN_ORDERS_SORT,
+  sortOrderListRows,
+  type AdminOrdersSortKey,
+} from "@/lib/admin-orders-sort";
+import {
+  DEFAULT_ADMIN_ORDERS_PAGE_SIZE,
+  paginateItems,
+  type AdminOrdersPageSize,
+} from "@/lib/admin-orders-pagination";
 
 export type { AdminSerializedOrder } from "@/components/admin/orders/order-row-data";
 
@@ -27,8 +38,7 @@ type AdminOrdersClientProps = Readonly<{
   orders: AdminSerializedOrder[];
   emptyMessage: string;
   activeTab: OrdersStatusTab;
-  jenis?: string;
-  hasServiceTypeFilter: boolean;
+  selectedJenis: JenisQueryValue[];
 }>;
 
 const PANEL_CLOSE_MS = 320;
@@ -52,11 +62,17 @@ export function AdminOrdersClient({
   orders,
   emptyMessage,
   activeTab,
-  jenis,
-  hasServiceTypeFilter,
+  selectedJenis,
 }: AdminOrdersClientProps) {
   const router = useRouter();
-  const [searchQuery, setSearchQuery] = useState("");
+  const [debouncedSearchQuery, setDebouncedSearchQuery] = useState("");
+  const [sortKey, setSortKey] = useState<AdminOrdersSortKey>(
+    DEFAULT_ADMIN_ORDERS_SORT,
+  );
+  const [page, setPage] = useState(1);
+  const [pageSize, setPageSize] = useState<AdminOrdersPageSize>(
+    DEFAULT_ADMIN_ORDERS_PAGE_SIZE,
+  );
   const [selectedId, setSelectedId] = useState<string | null>(null);
   const [slideIn, setSlideIn] = useState(false);
   const slideInRef = useRef(false);
@@ -73,8 +89,8 @@ export function AdminOrdersClient({
   }, []);
 
   const filteredOrders = useMemo(
-    () => filterOrdersBySearch(orders, searchQuery),
-    [orders, searchQuery],
+    () => filterOrdersBySearch(orders, debouncedSearchQuery),
+    [orders, debouncedSearchQuery],
   );
 
   const selectedOrder = useMemo(
@@ -153,38 +169,81 @@ export function AdminOrdersClient({
     [filteredOrders],
   );
 
+  const sortedRowData = useMemo(
+    () => sortOrderListRows(rowData, sortKey),
+    [rowData, sortKey],
+  );
+
+  const { items: pagedRows, meta: paginationMeta } = useMemo(
+    () => paginateItems(sortedRowData, page, pageSize),
+    [sortedRowData, page, pageSize],
+  );
+
+  const handleSearchChange = useCallback((value: string) => {
+    setDebouncedSearchQuery(value);
+    setPage(1);
+  }, []);
+
+  const handleSortChange = useCallback((nextSortKey: AdminOrdersSortKey) => {
+    setSortKey(nextSortKey);
+    setPage(1);
+  }, []);
+
+  const handlePageChange = useCallback((nextPage: number) => {
+    setPage(nextPage);
+  }, []);
+
+  const handlePageSizeChange = useCallback((nextPageSize: AdminOrdersPageSize) => {
+    setPageSize(nextPageSize);
+    setPage(1);
+  }, []);
+
   const handleRowClick = useCallback((id: string) => {
     setSelectedId((current) => (current === id ? null : id));
   }, []);
 
   const searchEmptyMessage =
-    searchQuery.trim() && rowData.length === 0
+    debouncedSearchQuery.trim() && sortedRowData.length === 0
       ? "Tidak ada pesanan yang cocok dengan pencarian."
       : emptyMessage;
 
   return (
     <>
       <OrdersToolbar
-        searchQuery={searchQuery}
-        onSearchChange={setSearchQuery}
+        onDebouncedSearchChange={handleSearchChange}
         activeTab={activeTab}
-        jenis={jenis}
-        hasServiceTypeFilter={hasServiceTypeFilter}
+        selectedJenis={selectedJenis}
       />
 
       <OrdersList
-        orders={rowData}
+        orders={pagedRows}
         emptyMessage={searchEmptyMessage}
         selectedId={selectedId}
         onRowClick={handleRowClick}
       />
 
+      {paginationMeta.total > 0 ? (
+        <div className="-mx-4 border-t border-[#dee1e6] bg-white px-4 py-4 lg:hidden">
+          <OrdersPagination
+            meta={paginationMeta}
+            onPageChange={handlePageChange}
+            onPageSizeChange={handlePageSizeChange}
+          />
+        </div>
+      ) : null}
+
       <div className="hidden lg:grid lg:grid-cols-1 lg:gap-6">
         <OrdersTable
-          orders={rowData}
+          orders={pagedRows}
+          totalCount={paginationMeta.total}
           emptyMessage={searchEmptyMessage}
           selectedId={selectedId}
           onRowClick={handleRowClick}
+          sortKey={sortKey}
+          onSortChange={handleSortChange}
+          paginationMeta={paginationMeta}
+          onPageChange={handlePageChange}
+          onPageSizeChange={handlePageSizeChange}
         />
       </div>
 

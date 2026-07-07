@@ -1,8 +1,7 @@
-import type { AdminDashboardStats } from "@/lib/admin-dashboard-stats";
+import type { AdminDashboardStats } from "@/src/lib/sdk/orders";
 
 import { DashboardHeader } from "./dashboard-header";
 import { DashboardNavLinks } from "./dashboard-nav-links";
-import { EcommercePlaceholder } from "./ecommerce-placeholder";
 import { InventorySoldPreview } from "./inventory-sold-preview";
 import { LaptopCarousel } from "./laptop-carousel";
 import { OrdersChart } from "./orders-chart";
@@ -35,8 +34,6 @@ export function DashboardContent({ stats, waHref }: DashboardContentProps) {
         <aside className="space-y-4">
           <OrdersChart counts={stats.counts} />
           <InventorySoldPreview items={stats.inventoryPreview} />
-          <EcommercePlaceholder />
-          <SupportCard waHref={waHref} />
         </aside>
       </div>
 

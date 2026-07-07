@@ -6,7 +6,7 @@ import {
   adminStatusBucketTableClassName,
   formatTrackingIdDisplay,
 } from "@/lib/admin-order-status-display";
-import type { AdminDashboardRecentOrder } from "@/lib/admin-dashboard-stats";
+import type { AdminDashboardRecentOrder } from "@/src/lib/sdk/orders";
 import { formatRelativeTime } from "@/lib/format-relative-time";
 
 type RecentOrdersTableProps = Readonly<{
@@ -35,7 +35,7 @@ export function RecentOrdersTable({ orders }: RecentOrdersTableProps) {
             Pesanan Terbaru
           </h2>
           <p className="mt-0.5 text-sm text-[#565d6d]">
-            Daftar 5 aktivitas pesanan terakhir sistem
+            Daftar 5 aktivitas pesanan terakhir
           </p>
         </div>
         <Link

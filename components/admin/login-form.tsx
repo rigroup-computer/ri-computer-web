@@ -2,7 +2,7 @@
 
 import { useActionState } from "react";
 import Image from "next/image";
-import { loginAdmin, type LoginAdminState } from "@/lib/actions/admin-auth";
+import { loginAdmin, type LoginAdminState } from "@/src/lib/actions/admin-auth";
 import Link from "next/link";
 
 function safeNextHref(next?: string): string | undefined {

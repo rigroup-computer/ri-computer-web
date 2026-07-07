@@ -65,7 +65,7 @@ export function QuickActions() {
             <Link
               key={action.href}
               href={action.href}
-              className="flex min-h-[108px] gap-3 rounded-2xl border border-[#dedfe3] bg-white p-4 custom-shadow-sm transition hover:border-[#1a73e8]/30 hover:bg-slate-50/50 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#1a73e8]/40"
+              className="flex min-h-[108px] items-center gap-3 rounded-2xl border border-[#dedfe3] bg-white p-4 custom-shadow-sm transition hover:border-[#1a73e8]/30 hover:bg-slate-50/50 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#1a73e8]/40"
             >
               <span className="flex size-11 shrink-0 items-center justify-center rounded-xl bg-[#f1f6fe] text-[#1a73e8]">
                 <Icon icon={action.icon} width={24} height={24} aria-hidden />

@@ -2,7 +2,7 @@ import Link from "next/link";
 
 import { OrderListRow } from "@/components/admin/orders/order-list-row";
 import { toOrderListRowDataFromDashboard } from "@/components/admin/orders/order-row-data";
-import type { AdminDashboardRecentOrder } from "@/lib/admin-dashboard-stats";
+import type { AdminDashboardRecentOrder } from "@/src/lib/sdk/orders";
 
 type RecentOrdersListProps = Readonly<{
   orders: AdminDashboardRecentOrder[];

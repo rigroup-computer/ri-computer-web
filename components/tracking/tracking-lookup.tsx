@@ -2,13 +2,18 @@
 
 import { useRef, useState } from "react";
 import Image from "next/image";
+import { VisitScheduleStatus } from "@prisma/client";
 import {
   lookupOrderByTrackingId,
   lookupOrdersByPhone,
   type PublicOrderView,
-} from "@/lib/actions/tracking";
+} from "@/src/lib/actions/tracking";
 import { serviceStatusLabel } from "@/lib/service-status-label";
 import { serviceTypeAdminLabel } from "@/lib/admin-order-status-display";
+import {
+  formatVisitDateTimeId,
+  visitScheduleStatusLabel,
+} from "@/lib/store-hours";
 import { useSavedTrackingIds } from "@/lib/use-saved-tracking-ids";
 import { whatsappHref } from "@/lib/whatsapp";
 import { ServiceProgress } from "@/components/tracking/service-progress";
@@ -77,6 +82,94 @@ function OrderCard({
           </div>
         </div>
       </div>
+
+      {order.preferredVisitAt ||
+      order.confirmedVisitAt ||
+      order.visitScheduleStatus ? (
+        <div
+          className={`mt-4 rounded-md border px-3 py-3 text-sm ${
+            order.visitScheduleStatus === VisitScheduleStatus.DECLINED
+              ? "border-amber-200 bg-amber-50"
+              : order.visitScheduleStatus === VisitScheduleStatus.RESCHEDULED
+                ? "border-[#bfdbfe] bg-[#eff6ff]"
+                : "border-slate-200 bg-slate-50"
+          }`}
+        >
+          <p
+            className={`text-xs font-semibold uppercase tracking-wide ${
+              order.visitScheduleStatus === VisitScheduleStatus.DECLINED
+                ? "text-amber-800"
+                : order.visitScheduleStatus === VisitScheduleStatus.RESCHEDULED
+                  ? "text-[#1d4ed8]"
+                  : "text-slate-500"
+            }`}
+          >
+            Jadwal Kunjungan
+          </p>
+          {order.preferredVisitAt ? (
+            <p
+              className={`mt-2 ${
+                order.visitScheduleStatus === VisitScheduleStatus.DECLINED
+                  ? "text-amber-950"
+                  : "text-slate-800"
+              }`}
+            >
+              <span className="font-medium">Preferensi:</span>{" "}
+              {formatVisitDateTimeId(new Date(order.preferredVisitAt))} WIB
+            </p>
+          ) : null}
+          {order.confirmedVisitAt ? (
+            <p className="mt-1 text-slate-800">
+              <span className="font-medium">
+                {order.visitScheduleStatus === VisitScheduleStatus.RESCHEDULED
+                  ? "Usulan admin:"
+                  : "Dikonfirmasi:"}
+              </span>{" "}
+              {formatVisitDateTimeId(new Date(order.confirmedVisitAt))} WIB
+            </p>
+          ) : null}
+          {order.visitScheduleStatus === VisitScheduleStatus.DECLINED ? (
+            <div className="mt-2">
+              <p className="text-xs font-medium text-amber-900">
+                {visitScheduleStatusLabel(VisitScheduleStatus.DECLINED)}
+              </p>
+              <p className="mt-1 text-xs text-amber-900/90">
+                Preferensi jadwal belum bisa dipakai. Tim Ri Computer akan
+                menghubungi Anda.
+              </p>
+              {order.visitScheduleNote ? (
+                <p className="mt-2 text-xs text-amber-950">
+                  {order.visitScheduleNote}
+                </p>
+              ) : null}
+            </div>
+          ) : order.visitScheduleStatus === VisitScheduleStatus.RESCHEDULED ? (
+            <div className="mt-2">
+              <p className="text-xs font-medium text-[#1d4ed8]">
+                {visitScheduleStatusLabel(VisitScheduleStatus.RESCHEDULED)}
+              </p>
+              <p className="mt-1 text-xs text-[#1d4ed8]/90">
+                Mohon konfirmasi apakah usulan jadwal di atas cocok untuk Anda.
+              </p>
+              {order.visitScheduleNote ? (
+                <p className="mt-2 text-xs text-[#1e40af]">
+                  {order.visitScheduleNote}
+                </p>
+              ) : null}
+            </div>
+          ) : order.visitScheduleStatus ? (
+            <p className="mt-2 text-xs text-slate-600">
+              {visitScheduleStatusLabel(
+                order.visitScheduleStatus as
+                  | "REQUESTED"
+                  | "CONFIRMED"
+                  | "RESCHEDULED"
+                  | "DECLINED",
+              )}
+            </p>
+          ) : null}
+        </div>
+      ) : null}
 
       <div className="py-4">
         <ServiceProgress status={order.status} />

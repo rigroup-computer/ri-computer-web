@@ -1,4 +1,4 @@
-import type { AdminDashboardStats } from "@/lib/admin-dashboard-stats";
+import type { AdminDashboardStats } from "@/src/lib/sdk/orders";
 
 type OrdersChartProps = Readonly<{
   counts: Pick<AdminDashboardStats["counts"], "antrian" | "proses" | "selesai">;

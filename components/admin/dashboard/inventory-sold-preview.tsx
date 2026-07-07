@@ -2,7 +2,7 @@ import { Icon } from "@iconify/react";
 import Image from "next/image";
 import Link from "next/link";
 
-import type { AdminDashboardInventoryPreview } from "@/lib/admin-dashboard-stats";
+import type { AdminDashboardInventoryPreview } from "@/src/lib/sdk/orders";
 
 type InventorySoldPreviewProps = Readonly<{
   items: AdminDashboardInventoryPreview[];

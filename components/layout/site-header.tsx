@@ -5,7 +5,12 @@ import { SiteHeaderNav } from "@/components/layout/site-header-nav";
 import { whatsappHref } from "@/lib/whatsapp";
 
 const consultationMessage =
-  "Halo Ri Computer, saya ingin konsultasi kerusakan laptop. Bisa dibantu?";
+  `Terkait konsultasi boleh diisi terlebih dahulu ya ka
+
+Asal kota:
+Merk & type laptop:
+Keluhan:
+Pertanyaan:`;
 
 export function SiteHeader() {
   const shopWa = process.env.SHOP_WHATSAPP_NUMBER?.trim() ?? "";

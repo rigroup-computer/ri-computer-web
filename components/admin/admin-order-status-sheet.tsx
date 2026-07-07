@@ -3,7 +3,7 @@
 import { useMemo, useState } from "react";
 import { ServiceStatus } from "@prisma/client";
 import { BottomSheet } from "@/components/ui/bottom-sheet";
-import { updateServiceOrderStatus } from "@/lib/actions/admin-orders";
+import { updateServiceOrderStatus } from "@/src/lib/actions/admin-orders";
 import { getAllowedNextStatuses } from "@/lib/service-order-status-transitions";
 import { serviceStatusLabel } from "@/lib/service-status-label";
 import { toast } from "sonner";

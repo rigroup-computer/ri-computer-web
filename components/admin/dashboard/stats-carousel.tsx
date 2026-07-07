@@ -1,4 +1,4 @@
-import type { AdminDashboardStats } from "@/lib/admin-dashboard-stats";
+import type { AdminDashboardStats } from "@/src/lib/sdk/orders";
 import { buildDashboardStatItems } from "@/lib/dashboard-stats-config";
 
 import { StatCard } from "./stat-card";
