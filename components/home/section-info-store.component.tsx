@@ -1,5 +1,6 @@
 import Image from "next/image";
 import Link from "next/link";
+import { JAYA_PLAZA_HOURS_DISPLAY } from "@/lib/store-hours";
 import { whatsappHref } from "@/lib/whatsapp";
 
 const JAYA_PLAZA_MAPS_URL = "https://maps.app.goo.gl/XYALKiAJd6ug2Xs6A";
@@ -14,20 +15,18 @@ Pertanyaan:`;
 function StoreJayaPlazaComponent() {
   return (
     <>
-      <span className="text-[#5A5F68FF]">Senin - Kamis</span>
-      <span className="text-right font-medium whitespace-nowrap">
-        09.30 - 16.00 WIB
-      </span>
-
-      <span className="text-[#5A5F68FF]">Sabtu</span>
-      <span className="text-right font-medium whitespace-nowrap">
-        09.30 - 16.30 WIB
-      </span>
-
-      <span className="text-[#5A5F68FF]">Jumat & Minggu</span>
-      <span className="text-right text-red-700 font-medium whitespace-nowrap">
-        TUTUP
-      </span>
+      {JAYA_PLAZA_HOURS_DISPLAY.map((row) => (
+        <span key={row.label} className="contents">
+          <span className="text-[#5A5F68FF]">{row.label}</span>
+          <span
+            className={`text-right font-medium whitespace-nowrap ${
+              row.closed ? "text-red-700" : ""
+            }`}
+          >
+            {row.hours}
+          </span>
+        </span>
+      ))}
     </>
   );
 }

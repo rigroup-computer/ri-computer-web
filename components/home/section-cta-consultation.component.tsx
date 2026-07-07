@@ -2,7 +2,12 @@ import Link from "next/link";
 import { whatsappHref } from "@/lib/whatsapp";
 
 const consultationMessage =
-  "Halo Ri Computer, saya ingin konsultasi kerusakan laptop. Bisa dibantu?";
+  `Terkait konsultasi boleh diisi terlebih dahulu ya ka
+
+Asal kota:
+Merk & type laptop:
+Keluhan:
+Pertanyaan:`;
 
 export default function SectionCtaConsultationComponent() {
   const shopWa = process.env.SHOP_WHATSAPP_NUMBER?.trim() ?? "";

@@ -43,8 +43,8 @@ export default function SectionBenefitStoreComponent() {
             <BenefitRow
               icon="/icons/svg-garansi.svg"
               iconBg="bg-primary/10"
-              title="Garansi Service 90 Hari"
-              description="Semua perbaikan kami lindungi dengan garansi sparepart dan jasa selama 3 bulan penuh."
+              title="Garansi Service 14 Hari - 1 Tahun"
+              description="Semua perbaikan kami lindungi dengan garansi sparepart dan jasa."
             />
             <BenefitRow
               icon="/icons/svg-estimasi-instant.svg"

@@ -1,7 +1,7 @@
 "use client";
 
 import { useEffect, useId, useRef, useState } from "react";
-import { searchAddresses } from "@/lib/actions/geocode";
+import { searchAddresses } from "@/src/lib/actions/geocode";
 import type { AddressSuggestion } from "@/lib/geocode/nominatim";
 
 const DEBOUNCE_MS = 400;

@@ -1,12 +1,6 @@
 import Image from "next/image";
 import Link from "next/link";
 
-const stats = [
-  { value: "15k+", label: "Unit Terperbaiki" },
-  { value: "4.9/5", label: "Rating Kepuasan" },
-  { value: "50+", label: "Teknisi Ahli" },
-] as const;
-
 export default function SectionBannerComponent() {
   return (
     <section className="relative overflow-hidden">
@@ -84,16 +78,6 @@ export default function SectionBannerComponent() {
               >
                 Lihat Layanan
               </Link>
-            </div>
-            <div className="mt-8 flex gap-12 border-t border-[#dee1e6]/50 pt-8">
-              {stats.map((stat) => (
-                <div key={stat.label}>
-                  <div className="text-2xl font-bold text-mate-black">
-                    {stat.value}
-                  </div>
-                  <div className="text-sm text-[#565d6d]">{stat.label}</div>
-                </div>
-              ))}
             </div>
           </div>
 
