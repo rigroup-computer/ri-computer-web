@@ -1,12 +1,19 @@
 import type { KeyboardEvent } from "react";
 
+import { VisitScheduleStatus } from "@prisma/client";
 import { Icon } from "@iconify/react";
 
 import {
   adminStatusBucketLabel,
   adminStatusOrdersPageBadgeClassName,
   adminStatusOrdersPageBadgeSpriteClass,
+  serviceTypeAdminLabel,
 } from "@/lib/admin-order-status-display";
+import {
+  isScheduleAwaitingCustomer,
+  isSchedulePendingAdminAction,
+  visitScheduleTableLabel,
+} from "@/lib/admin-visit-schedule-gate";
 import { formatOrderDateTimeId } from "@/lib/format-relative-time";
 
 import {
@@ -14,13 +21,27 @@ import {
   orderRowAriaLabel,
   type OrderListRowData,
 } from "./order-row-data";
+import { OrderVisitScheduleBadge } from "./order-visit-schedule-badge";
+import { OrdersTableSort } from "./orders-table-sort";
+import { OrdersPagination } from "./orders-pagination";
+import type { AdminOrdersSortKey } from "@/lib/admin-orders-sort";
+import type {
+  AdminOrdersPageSize,
+  AdminOrdersPaginationMeta,
+} from "@/lib/admin-orders-pagination";
 import "./order-process-icon.css";
 
 type OrdersTableProps = Readonly<{
   orders: OrderListRowData[];
+  totalCount: number;
   emptyMessage: string;
   selectedId: string | null;
   onRowClick: (id: string) => void;
+  sortKey: AdminOrdersSortKey;
+  onSortChange: (sortKey: AdminOrdersSortKey) => void;
+  paginationMeta: AdminOrdersPaginationMeta;
+  onPageChange: (page: number) => void;
+  onPageSizeChange: (pageSize: AdminOrdersPageSize) => void;
 }>;
 
 function handleRowKeyDown(
@@ -40,16 +61,17 @@ function customerInitials(name: string): string {
   return `${parts[0].slice(0, 1)}${parts[parts.length - 1].slice(0, 1)}`.toUpperCase();
 }
 
-function issueLabel(issue: string): string {
-  const trimmed = issue.trim();
-  return trimmed.length > 0 ? trimmed : "—";
-}
-
 export function OrdersTable({
   orders,
+  totalCount,
   emptyMessage,
   selectedId,
   onRowClick,
+  sortKey,
+  onSortChange,
+  paginationMeta,
+  onPageChange,
+  onPageSizeChange,
 }: OrdersTableProps) {
   return (
     <section
@@ -59,23 +81,13 @@ export function OrdersTable({
       <div className="flex flex-wrap items-center justify-between gap-3 border-b border-[#dee1e6] px-6 py-4">
         <div className="flex min-w-0 flex-wrap items-center gap-3">
           <h2 className="text-lg font-semibold text-[#171a1f]">Daftar Pesanan</h2>
-          {orders.length > 0 ? (
+          {totalCount > 0 ? (
             <span className="rounded-[11px] bg-[#f3f4f6] px-2.5 py-0.5 text-xs text-[#565d6d]">
-              {orders.length} Pesanan
+              {totalCount} Pesanan
             </span>
           ) : null}
         </div>
-        <div className="flex items-center gap-2 text-sm text-[#565d6d]">
-          <span>Urutkan:</span>
-          <button
-            type="button"
-            className="inline-flex items-center gap-1 rounded-md px-2 py-1.5 font-medium text-[#171a1f]"
-            disabled
-          >
-            Terbaru
-            <Icon icon="mdi:unfold-more-horizontal" width={14} height={14} aria-hidden />
-          </button>
-        </div>
+        <OrdersTableSort sortKey={sortKey} onSortChange={onSortChange} />
       </div>
 
       {orders.length === 0 ? (
@@ -84,7 +96,7 @@ export function OrdersTable({
         </p>
       ) : (
         <div className="overflow-x-auto">
-          <table className="w-full min-w-[1080px] text-left text-sm">
+          <table className="w-full min-w-[1180px] text-left text-sm">
             <thead>
               <tr className="border-b border-[#dee1e6] bg-[#f3f4f6]/30 text-sm font-semibold text-[#565d6d]">
                 <th scope="col" className="px-4 py-4">
@@ -103,6 +115,9 @@ export function OrdersTable({
                   STATUS
                 </th>
                 <th scope="col" className="px-4 py-4">
+                  JADWAL
+                </th>
+                <th scope="col" className="px-4 py-4">
                   UPDATE TERAKHIR
                 </th>
                 {/* <th scope="col" className="px-4 py-4 text-right">
@@ -113,6 +128,8 @@ export function OrdersTable({
             <tbody>
               {orders.map((order) => {
                 const isSelected = selectedId === order.id;
+                const isPendingAdminAction = isSchedulePendingAdminAction(order);
+                const isAwaitingCustomer = isScheduleAwaitingCustomer(order);
                 const activate = () => onRowClick(order.id);
 
                 return (
@@ -124,6 +141,12 @@ export function OrdersTable({
                     onClick={activate}
                     onKeyDown={(event) => handleRowKeyDown(event, activate)}
                     className={`cursor-pointer border-b border-[#dee1e6] last:border-0 focus-visible:outline focus-visible:-outline-offset-2 focus-visible:outline-[#1a73e8] ${
+                      isPendingAdminAction
+                        ? "border-l-4 border-l-amber-400"
+                        : isAwaitingCustomer
+                          ? "border-l-4 border-l-[#60a5fa]"
+                          : ""
+                    } ${
                       isSelected ? "bg-[#f1f6fe]" : "hover:bg-slate-50/60"
                     }`}
                   >
@@ -171,7 +194,7 @@ export function OrdersTable({
                     </td>
                     <td className="px-4 py-5">
                       <span className="inline-flex max-w-[140px] truncate rounded-[10px] bg-[#f6f7f9] px-2.5 py-0.5 text-xs text-[#19191f]">
-                        {issueLabel(order.issue)}
+                        {serviceTypeAdminLabel(order.serviceType)}
                       </span>
                     </td>
                     <td className="px-4 py-5">
@@ -182,6 +205,33 @@ export function OrdersTable({
                         />
                         {adminStatusBucketLabel(order.bucket)}
                       </span>
+                    </td>
+                    <td className="px-4 py-5">
+                      <div className="flex max-w-[200px] flex-col items-start gap-1">
+                        {order.visitScheduleStatus ===
+                          VisitScheduleStatus.CONFIRMED ||
+                        order.visitScheduleStatus ===
+                          VisitScheduleStatus.RESCHEDULED ? (
+                          <OrderVisitScheduleBadge
+                            visitScheduleStatus={order.visitScheduleStatus}
+                            confirmedVisitAt={order.confirmedVisitAt}
+                            preferredVisitAt={order.preferredVisitAt}
+                            bucket={order.bucket}
+                          />
+                        ) : (
+                          <>
+                            <span className="text-xs leading-snug text-[#171a1f]/80">
+                              {visitScheduleTableLabel(order)}
+                            </span>
+                            <OrderVisitScheduleBadge
+                              visitScheduleStatus={order.visitScheduleStatus}
+                              confirmedVisitAt={order.confirmedVisitAt}
+                              preferredVisitAt={order.preferredVisitAt}
+                              bucket={order.bucket}
+                            />
+                          </>
+                        )}
+                      </div>
                     </td>
                     <td className="px-4 py-5 text-[#565d6d]">
                       {formatOrderDateTimeId(order.updatedAt)}
@@ -207,35 +257,13 @@ export function OrdersTable({
         </div>
       )}
 
-      {orders.length > 0 ? (
-        <div className="flex flex-wrap items-center justify-between gap-3 border-t border-[#dee1e6] bg-[#f3f4f6]/10 px-6 py-4 text-sm text-[#565d6d]">
-          <p>
-            Menampilkan {orders.length} dari {orders.length} pesanan
-          </p>
-          <div className="flex items-center gap-2">
-            <button
-              type="button"
-              disabled
-              className="rounded-md border border-[#dee1e6] px-3 py-1.5 text-sm font-medium text-[#171a1f] opacity-50"
-            >
-              Sebelumnya
-            </button>
-            <button
-              type="button"
-              disabled
-              className="size-8 rounded-md bg-[#1a73e8] text-sm font-medium text-white"
-              aria-current="page"
-            >
-              1
-            </button>
-            <button
-              type="button"
-              disabled
-              className="rounded-md border border-[#dee1e6] px-3 py-1.5 text-sm font-medium text-[#171a1f]"
-            >
-              Selanjutnya
-            </button>
-          </div>
+      {totalCount > 0 ? (
+        <div className="border-t border-[#dee1e6] bg-[#f3f4f6]/10 px-6 py-4">
+          <OrdersPagination
+            meta={paginationMeta}
+            onPageChange={onPageChange}
+            onPageSizeChange={onPageSizeChange}
+          />
         </div>
       ) : null}
     </section>

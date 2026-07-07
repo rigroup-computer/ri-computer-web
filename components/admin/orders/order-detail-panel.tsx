@@ -7,6 +7,11 @@ import { Icon } from "@iconify/react";
 import { OrderDetailBody } from "./order-detail-body";
 import type { AdminSerializedOrder } from "./order-row-data";
 
+import {
+  isScheduleGateActive,
+  scheduleGateHeaderSubtitle,
+} from "@/lib/admin-visit-schedule-gate";
+
 type OrderDetailPanelProps = Readonly<{
   order: AdminSerializedOrder;
   slideIn?: boolean;
@@ -37,6 +42,11 @@ function DetailHeader({
         <p className="font-medium text-base text-[#171a1f]">
           Detail <span className="font-mono font-semibold"> {order.trackingId}</span>
         </p>
+        {isScheduleGateActive(order) ? (
+          <p className="text-xs text-[#565d6d]">
+            {scheduleGateHeaderSubtitle(order)}
+          </p>
+        ) : null}
       </div>
     </header>
   );

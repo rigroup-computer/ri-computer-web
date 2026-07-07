@@ -1,11 +1,11 @@
-import type { ServiceStatus } from "@prisma/client";
+import { VisitScheduleStatus, type ServiceStatus, type ServiceType } from "@prisma/client";
 
 import {
   formatTrackingIdDisplay,
   getAdminStatusBucket,
   type AdminStatusBucket,
 } from "@/lib/admin-order-status-display";
-import type { AdminDashboardRecentOrder } from "@/lib/admin-dashboard-stats";
+import type { AdminDashboardRecentOrder } from "@/src/lib/sdk/orders";
 import type { ServiceOrderCostLineItem } from "@/lib/service-order-cost-items";
 
 export type OrderDeviceFields = Readonly<{
@@ -31,9 +31,13 @@ export type OrderListRowData = Readonly<{
   customerName: string;
   customerPhone: string;
   issue: string;
+  serviceType: ServiceType;
   laptopBrand: string | null;
   laptopModel: string | null;
   bucket: AdminStatusBucket;
+  visitScheduleStatus: VisitScheduleStatus;
+  confirmedVisitAt: Date | null;
+  preferredVisitAt: Date | null;
   createdAt: Date;
   updatedAt: Date;
 }>;
@@ -49,6 +53,10 @@ export type AdminSerializedOrder = Readonly<{
   attachmentUrls: string[];
   visitAddress: string;
   preferredVisitAt: string | null;
+  confirmedVisitAt: string | null;
+  visitScheduleStatus: VisitScheduleStatus;
+  visitScheduleNote: string | null;
+  serviceType: ServiceType;
   status: ServiceStatus;
   costConfirmationNote: string | null;
   costLineItems: ServiceOrderCostLineItem[];
@@ -71,9 +79,17 @@ export function toOrderListRowDataFromSerialized(
     customerName: order.customerName,
     customerPhone: order.customerPhone,
     issue: order.issue,
+    serviceType: order.serviceType,
     laptopBrand: order.laptopBrand,
     laptopModel: order.laptopModel,
     bucket: getAdminStatusBucket(order.status),
+    visitScheduleStatus: order.visitScheduleStatus,
+    confirmedVisitAt: order.confirmedVisitAt
+      ? new Date(order.confirmedVisitAt)
+      : null,
+    preferredVisitAt: order.preferredVisitAt
+      ? new Date(order.preferredVisitAt)
+      : null,
     createdAt: new Date(order.createdAt),
     updatedAt: new Date(order.updatedAt),
   };
@@ -88,9 +104,13 @@ export function toOrderListRowDataFromDashboard(
     customerName: order.customerName,
     customerPhone: "",
     issue: "",
+    serviceType: order.serviceType,
     laptopBrand: order.laptopBrand,
     laptopModel: order.laptopModel,
     bucket: order.bucket,
+    visitScheduleStatus: VisitScheduleStatus.CONFIRMED,
+    confirmedVisitAt: null,
+    preferredVisitAt: null,
     createdAt: order.updatedAt,
     updatedAt: order.updatedAt,
   };

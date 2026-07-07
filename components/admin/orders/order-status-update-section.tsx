@@ -1,3 +1,4 @@
+/* eslint-disable react-hooks/set-state-in-effect */
 "use client";
 
 import { useEffect, useState } from "react";
@@ -6,7 +7,7 @@ import { ServiceStatus } from "@prisma/client";
 import { Icon } from "@iconify/react";
 import { toast } from "sonner";
 
-import { submitServiceOrderStatusUpdate } from "@/lib/actions/admin-orders";
+import { submitServiceOrderStatusUpdate } from "@/src/lib/actions/admin-orders";
 import {
   SERVICE_ORDER_STATUS_FLOW,
   getAllowedNextStatuses,
@@ -206,7 +207,7 @@ export function OrderStatusUpdateSection({
 
   return (
     <>
-      <div className="mt-4 rounded-xl bg-[#f7f7f8]/80 p-3">
+      <div className="px-4 lg:px-5 py-4 bg-white mb-2">
         <div className="mt-3 grid grid-cols-4 gap-2">
           {SERVICE_ORDER_STATUS_FLOW.map((step) => {
             const selectable = isStepSelectable(order.status, step);

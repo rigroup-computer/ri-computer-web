@@ -3,7 +3,7 @@
 import { Icon } from "@iconify/react";
 import type { ServiceStatus } from "@prisma/client";
 
-import { appendServiceTimelineNote } from "@/lib/actions/admin-orders";
+import { appendServiceTimelineNote } from "@/src/lib/actions/admin-orders";
 import { serviceStatusLabel } from "@/lib/service-status-label";
 
 import type { AdminSerializedOrder } from "./order-row-data";
@@ -35,7 +35,7 @@ export function OrderActivityTimeline({
   );
 
   return (
-    <div className="mt-5 border-t border-[#dee1e6] pt-4">
+    <div className="px-4 lg:px-5 pt-4 pb-8 bg-white">
       <div className="flex items-center gap-2 my-4">
         <Icon
           icon="material-symbols:history-rounded"
@@ -51,6 +51,7 @@ export function OrderActivityTimeline({
 
       <ul className="relative mt-4 space-y-0">
         {savedTimelines.map((item, index) => {
+          const isLatest = index === savedTimelines.length - 1 && !hasDraft;
           const showConnector = index < savedTimelines.length - 1;
           return (
             <li key={item.id} className="relative flex gap-3 pb-5 last:pb-0">
@@ -61,25 +62,45 @@ export function OrderActivityTimeline({
                 />
               ) : null}
               <span
-                className="relative z-10 mt-0.5 flex size-[18px] shrink-0 items-center justify-center rounded-full bg-[#1a73e8]"
+                className={`relative z-10 mt-0.5 flex shrink-0 items-center justify-center rounded-full ${
+                  isLatest
+                    ? "size-[22px] bg-[#1a73e8] ring-4 ring-[#1a73e8]/15"
+                    : "size-[18px] border-2 border-[#dee1e6] bg-white"
+                }`}
                 aria-hidden
               >
-                <span className="size-2 rounded-full bg-white" />
+                <span
+                  className={`rounded-full ${
+                    isLatest ? "size-2.5 bg-white" : "size-1.5 bg-[#c4c8cf]"
+                  }`}
+                />
               </span>
               <div className="min-w-0 flex-1 -mt-0.5">
                 <div className="flex flex-wrap items-start justify-between gap-2">
-                  <p className="text-sm font-semibold text-[#171a1f]">
+                  <p
+                    className={`text-sm ${
+                      isLatest
+                        ? "font-semibold text-[#171a1f]"
+                        : "font-medium text-[#565d6d]"
+                    }`}
+                  >
                     {item.title}
                   </p>
                   <time
                     dateTime={item.createdAt}
-                    className="shrink-0 text-xs text-[#565d6d]"
+                    className={`shrink-0 text-xs ${
+                      isLatest ? "font-medium text-[#1a73e8]" : "text-[#565d6d]"
+                    }`}
                   >
                     {formatTimelineDate(item.createdAt)}
                   </time>
                 </div>
                 {item.note ? (
-                  <p className="mt-0.5 whitespace-pre-line text-xs text-[#565d6d]">
+                  <p
+                    className={`mt-0.5 whitespace-pre-line text-xs ${
+                      isLatest ? "text-[#171a1f]/80" : "text-[#565d6d]"
+                    }`}
+                  >
                     {item.note}
                   </p>
                 ) : null}

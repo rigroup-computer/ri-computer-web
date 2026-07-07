@@ -9,6 +9,10 @@ import {
   adminStatusOrdersPageBadgeSpriteClass,
 } from "@/lib/admin-order-status-display";
 import {
+  isScheduleAwaitingCustomer,
+  isSchedulePendingAdminAction,
+} from "@/lib/admin-visit-schedule-gate";
+import {
   formatOrderDateId,
   formatRelativeTimeShort,
 } from "@/lib/format-relative-time";
@@ -19,6 +23,7 @@ import {
   orderRowAriaLabel,
   type OrderListRowData,
 } from "./order-row-data";
+import { OrderVisitScheduleBadge } from "./order-visit-schedule-badge";
 import "./order-process-icon.css";
 
 type OrderListRowProps = Readonly<{
@@ -49,10 +54,10 @@ function DashboardRowContent({
         <p className="mt-1 truncate text-sm font-semibold text-mate-black">
           {order.customerName}
         </p>
-        <p className="mt-0.5 flex items-center gap-1 text-xs text-[#565d6d]">
-          <div className="relative size-4">
+        <div className="mt-0.5 flex items-center gap-1 text-xs text-[#565d6d]">
+          <span className="relative size-4 shrink-0">
             <Image src="/icons/ic-package.svg" alt="Package" fill />
-          </div>
+          </span>
           <span className="truncate">
             {formatOrderDeviceLabel(order, ORDER_DEVICE_EMPTY_LIST)}
           </span>
@@ -62,7 +67,7 @@ function DashboardRowContent({
           <span className="shrink-0 tabular-nums">
             {formatRelativeTimeShort(order.updatedAt)}
           </span>
-        </p>
+        </div>
       </div>
       <Icon
         icon="mdi:chevron-right"
@@ -83,7 +88,7 @@ function OrdersPageRowContent({
   return (
     <>
       <div className="min-w-0 flex-1">
-        <div className="flex items-center justify-between gap-2">
+        <div className="flex items-start justify-between gap-2">
           <div className="flex min-w-0 flex-1 items-center gap-1.5">
             <span className="min-w-0 max-w-32 shrink truncate text-xs font-bold tracking-wide text-[#1a73e8]">
               {order.trackingId}
@@ -100,17 +105,23 @@ function OrdersPageRowContent({
             {formatOrderDateId(order.createdAt)}
           </span>
         </div>
+        <OrderVisitScheduleBadge
+          visitScheduleStatus={order.visitScheduleStatus}
+          confirmedVisitAt={order.confirmedVisitAt}
+          preferredVisitAt={order.preferredVisitAt}
+          bucket={order.bucket}
+        />
         <p className="mt-1 truncate text-base capitalize font-semibold text-[#171a1f]">
           {order.customerName}
         </p>
-        <p className="mt-0.5 flex items-center gap-1 text-xs text-[#565d6d]">
-          <div className="relative size-4">
+        <div className="mt-0.5 flex items-center gap-1 text-xs text-[#565d6d]">
+          <span className="relative size-4 shrink-0">
             <Image src="/icons/ic-package.svg" alt="Package" fill />
-          </div>
+          </span>
           <span className="truncate">
             {formatOrderDeviceLabel(order, ORDER_DEVICE_EMPTY_LIST)}
           </span>
-        </p>
+        </div>
       </div>
       <Icon
         icon="mdi:chevron-right"
@@ -131,8 +142,18 @@ export function OrderListRow({
   onClick,
   href,
 }: OrderListRowProps) {
+  const isPendingAdminAction =
+    variant === "orders" && isSchedulePendingAdminAction(order);
+  const isAwaitingCustomer =
+    variant === "orders" && isScheduleAwaitingCustomer(order);
   const rowClassName = `flex w-full items-center gap-3 px-4 active:bg-slate-50 ${
     variant === "orders" ? "min-h-[101px] py-4" : "min-h-11 py-3.5"
+  } ${
+    isPendingAdminAction
+      ? "border-l-4 border-l-amber-400"
+      : isAwaitingCustomer
+        ? "border-l-4 border-l-[#60a5fa]"
+        : ""
   } ${isSelected ? "bg-[#f1f6fe]" : ""}`;
 
   const borderClass = isLast ? undefined : "border-b border-[#dee1e6]";

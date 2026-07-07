@@ -1,11 +1,14 @@
 import Link from "next/link";
 
-import { type OrdersStatusTab } from "@/lib/admin-order-status-display";
+import {
+  buildAdminOrdersPageHref,
+  type JenisQueryValue,
+  type OrdersStatusTab,
+} from "@/lib/admin-order-status-display";
 
 type OrdersTabFilterProps = Readonly<{
   activeTab: OrdersStatusTab;
-  jenis?: string;
-  hasServiceTypeFilter: boolean;
+  selectedJenis: JenisQueryValue[];
 }>;
 
 const TABS: ReadonlyArray<{ id: OrdersStatusTab; label: string }> = [
@@ -15,22 +18,9 @@ const TABS: ReadonlyArray<{ id: OrdersStatusTab; label: string }> = [
   { id: "selesai", label: "Selesai" },
 ];
 
-function tabHref(
-  tab: OrdersStatusTab,
-  jenis: string | undefined,
-  hasServiceTypeFilter: boolean,
-): string {
-  const params = new URLSearchParams({ tab });
-  if (hasServiceTypeFilter && jenis) {
-    params.set("jenis", jenis);
-  }
-  return `/admin/orders?${params.toString()}`;
-}
-
 export function OrdersTabFilter({
   activeTab,
-  jenis,
-  hasServiceTypeFilter,
+  selectedJenis,
 }: OrdersTabFilterProps) {
   return (
     <nav
@@ -42,7 +32,7 @@ export function OrdersTabFilter({
         return (
           <Link
             key={tab.id}
-            href={tabHref(tab.id, jenis, hasServiceTypeFilter)}
+            href={buildAdminOrdersPageHref(tab.id, selectedJenis)}
             scroll={false}
             aria-current={isActive ? "page" : undefined}
             className={`min-h-11 flex-1 border-b-2 pb-2.5 pt-1 text-center text-sm transition-colors ${
