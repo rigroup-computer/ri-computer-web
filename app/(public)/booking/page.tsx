@@ -1,5 +1,5 @@
 import type { Metadata } from "next";
-import { BookingPageContent } from "@/app/booking/booking-page-content";
+import { BookingPageContent } from "@/app/(public)/booking/booking-page-content";
 import { homeServiceWhatsAppHref } from "@/lib/booking-service-links";
 
 export const metadata: Metadata = {

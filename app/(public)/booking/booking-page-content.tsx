@@ -3,6 +3,10 @@
 import { Suspense, useState } from "react";
 import { BookingForm } from "@/components/forms/booking-form";
 
+function BookingFormFallback() {
+  return <div className="h-[402px] lg:h-52 mt-10 bg-gray-50 rounded-lg" />;
+}
+
 export function BookingPageContent({
   homeServiceWaHref,
 }: Readonly<{
@@ -20,11 +24,7 @@ export function BookingPageContent({
           </p>
         </>
       ) : null}
-      <Suspense
-        fallback={
-          <p className="mt-10 text-sm text-slate-500">Memuat formulir…</p>
-        }
-      >
+      <Suspense fallback={<BookingFormFallback />}>
         <BookingForm
           homeServiceWaHref={homeServiceWaHref}
           onSuccessChange={setBookingSucceeded}

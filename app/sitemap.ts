@@ -7,7 +7,7 @@ export default function sitemap(): MetadataRoute.Sitemap {
   }
 
   const base = (process.env.NEXT_PUBLIC_SITE_URL ?? "http://localhost:3000").replace(/\/$/, "");
-  const paths = ["/", "/booking", "/tracking", "/marketplace"] as const;
+  const paths = ["/", "/booking", "/tracking"] as const;
   const now = new Date();
 
   return paths.map((path) => ({

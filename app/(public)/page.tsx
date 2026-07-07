@@ -1,12 +1,10 @@
-/* eslint-disable @typescript-eslint/no-explicit-any */
 import SectionBannerComponent from "@/components/home/section-banner.component";
 import SectionBenefitStoreComponent from "@/components/home/section-benefit-store.component";
+import SectionCtaConsultationComponent from "@/components/home/section-cta-consultation.component";
 import SectionInfoStoreComponent from "@/components/home/section-info-store.component";
 import SectionServicesComponent from "@/components/home/section-services.component";
 import SectionSellComponent from "@/components/home/SectionSell/section-sell.component";
-import { Icon } from "@iconify/react";
 import type { Metadata } from "next";
-import Image from "next/image";
 
 export const metadata: Metadata = {
   title: "Beranda Ri Computer — Solusi Terbaik Laptop Anda",
@@ -20,20 +18,20 @@ export const metadata: Metadata = {
   },
 };
 
-export const dynamic = "force-dynamic";
-
 export default async function HomePage() {
   return (
-    <main className="bg-[#f8fafc] pb-24">
+    <main className="bg-primary-white pb-24">
       <SectionBannerComponent />
 
       <SectionServicesComponent />
 
       <SectionSellComponent />
 
+      <SectionInfoStoreComponent />
+
       <SectionBenefitStoreComponent />
 
-      <SectionInfoStoreComponent />
+      <SectionCtaConsultationComponent />
     </main>
   );
 }

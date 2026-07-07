@@ -1,7 +1,7 @@
 import { Icon } from "@iconify/react";
 import Link from "next/link";
 
-import { logoutAdmin } from "@/lib/actions/admin-auth";
+import { logoutAdmin } from "@/src/lib/actions/admin-auth";
 import { whatsappHref } from "@/lib/whatsapp";
 
 export const dynamic = "force-dynamic";

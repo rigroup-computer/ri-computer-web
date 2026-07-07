@@ -5,33 +5,25 @@ import type { AdminSerializedOrder } from "@/components/admin/orders/order-row-d
 import { OrdersPageHeader } from "@/components/admin/orders/orders-page-header";
 import { resolveOrderUpdatedAt } from "@/components/admin/orders/order-row-data";
 import {
+  jenisValuesFromQuery,
   ordersStatusTabFromQuery,
-  serviceTypeFromJenisQuery,
+  serviceTypesFromJenisQuery,
   statusWhereForOrdersTab,
 } from "@/lib/admin-order-status-display";
 import { normalizeStoredIssueAttachmentUrls } from "@/lib/booking-issue-attachments";
 import { parseStoredCostLineItems } from "@/lib/service-order-cost-items";
-import { prisma } from "@/lib/prisma";
+import { orderSdk } from "@/src/lib/sdk/orders";
 
 export const dynamic = "force-dynamic";
 
 type SearchParams = Promise<{
-  jenis?: string;
+  jenis?: string | string[];
   tab?: string;
 }>;
 
-async function fetchOrdersWithTimelines(where: Prisma.ServiceOrderWhereInput) {
-  return prisma.serviceOrder.findMany({
-    where,
-    orderBy: { createdAt: "desc" },
-    include: {
-      timelines: { orderBy: { createdAt: "desc" } },
-    },
-  });
-}
-
-export type AdminOrderQueryRow =
-  Awaited<ReturnType<typeof fetchOrdersWithTimelines>>[number];
+export type AdminOrderQueryRow = Awaited<
+  ReturnType<typeof orderSdk.searchAdminOrders>
+>[number];
 
 function serializeOrdersForClient(
   orders: AdminOrderQueryRow[],
@@ -49,6 +41,10 @@ function serializeOrdersForClient(
     ),
     visitAddress: order.visitAddress,
     preferredVisitAt: order.preferredVisitAt?.toISOString() ?? null,
+    confirmedVisitAt: order.confirmedVisitAt?.toISOString() ?? null,
+    visitScheduleStatus: order.visitScheduleStatus,
+    visitScheduleNote: order.visitScheduleNote,
+    serviceType: order.serviceType,
     status: order.status,
     costConfirmationNote: order.costConfirmationNote,
     costLineItems: parseStoredCostLineItems(order.costLineItems),
@@ -80,31 +76,28 @@ export default async function AdminOrdersPage({
 }>) {
   const params = await searchParams;
   const activeTab = ordersStatusTabFromQuery(params?.tab);
-  const serviceTypeFilter = serviceTypeFromJenisQuery(
-    typeof params?.jenis === "string" ? params.jenis : undefined,
-  );
+  const selectedJenis = jenisValuesFromQuery(params?.jenis);
+  const serviceTypes = serviceTypesFromJenisQuery(params?.jenis);
 
   const tabStatusWhere = statusWhereForOrdersTab(activeTab);
-  const where: Prisma.ServiceOrderWhereInput = serviceTypeFilter
-    ? { AND: [tabStatusWhere, { serviceType: serviceTypeFilter }] }
-    : tabStatusWhere;
+  const where: Prisma.ServiceOrderWhereInput =
+    serviceTypes.length > 0
+      ? { AND: [tabStatusWhere, { serviceType: { in: serviceTypes } }] }
+      : tabStatusWhere;
 
-  const orders = await fetchOrdersWithTimelines(where);
+  const orders = await orderSdk.searchAdminOrders(where);
   const emptyMessage = EMPTY_MESSAGES[activeTab] ?? EMPTY_MESSAGES.semua;
 
   return (
     <main className="space-y-3 lg:space-y-5">
-      <OrdersPageHeader
-        hasServiceTypeFilter={Boolean(serviceTypeFilter)}
-        jenisLabel={params?.jenis}
-      />
+      <OrdersPageHeader selectedJenis={selectedJenis} />
 
       <AdminOrdersClient
+        key={`${activeTab}-${selectedJenis.join(",")}`}
         orders={serializeOrdersForClient(orders)}
         emptyMessage={emptyMessage}
         activeTab={activeTab}
-        jenis={params?.jenis}
-        hasServiceTypeFilter={Boolean(serviceTypeFilter)}
+        selectedJenis={selectedJenis}
       />
     </main>
   );

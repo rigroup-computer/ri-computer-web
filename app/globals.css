@@ -1,11 +1,13 @@
 @import "tailwindcss";
 @import "tailwind-scrollbar-hide/v4";
+@import "react-day-picker/style.css";
 
 @theme {
   --color-primary: #2563eb;
   --color-primary-dark: #1d4ed8;
   --color-secondary: #eb4625;
   --color-mate-black: #202124;
+  --color-primary-white: #f8fafc;
 
   /* Mobile-first breakpoints (below default `sm` at 640px) */
   --breakpoint-mobile-s: 20rem; /* 320px */
@@ -67,4 +69,13 @@ body {
   box-shadow:
     0 4px 6px -1px rgba(0, 0, 0, 0.05),
     0 2px 4px -1px rgba(0, 0, 0, 0.03);
+}
+
+.booking-day-picker {
+  --rdp-accent-color: #2563eb;
+  --rdp-accent-background-color: #eff6ff;
+  --rdp-day-height: 2.25rem;
+  --rdp-day-width: 2.25rem;
+  --rdp-day_button-height: 2.25rem;
+  --rdp-day_button-width: 2.25rem;
 }

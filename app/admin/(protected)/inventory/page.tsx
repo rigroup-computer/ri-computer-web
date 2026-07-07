@@ -1,9 +1,9 @@
 import Image from "next/image";
 import { redirect } from "next/navigation";
 import { InventoryFormSubmitButton } from "@/components/admin/inventory-form-submit";
-import { prisma } from "@/lib/prisma";
 import { formatIdr } from "@/lib/format-idr";
-import { createInventoryItem, deleteInventoryItem, setInventoryPublish } from "@/lib/actions/admin-inventory";
+import { createInventoryItem, deleteInventoryItem, setInventoryPublish } from "@/src/lib/actions/admin-inventory";
+import { marketplaceSdk } from "@/src/lib/sdk/marketplace";
 
 export const dynamic = "force-dynamic";
 
@@ -15,9 +15,7 @@ export default async function AdminInventoryPage() {
     redirect("/admin");
   }
 
-  const items = await prisma.inventoryItem.findMany({
-    orderBy: { createdAt: "desc" },
-  });
+  const items = await marketplaceSdk.findAll();
 
   return (
     <main className="space-y-6">

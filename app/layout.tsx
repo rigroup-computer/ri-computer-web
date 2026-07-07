@@ -1,20 +1,8 @@
 import type { Metadata } from "next";
 import "./globals.css";
-import { PublicShell } from "@/components/layout/public-shell";
-import { SiteFooter } from "@/components/layout/site-footer";
+import { DevBfcacheGuard } from "@/components/dev/dev-bfcache-guard";
 import { AppToaster } from "@/components/ui/app-toaster";
 import { isPublicIndexingAllowed } from "@/lib/seo-indexing";
-import { whatsappHref, getShopWhatsAppNumber } from "@/lib/whatsapp";
-
-const footerHelpMessage =
-  "Halo Ri Computer, saya butuh bantuan terkait servis laptop. Bisa dibantu?";
-
-const consultationFloatMessage = `Terkait konsultasi boleh diisi terlebih dahulu ya ka
-
-Asal kota:
-Merk & type laptop:
-Keluhan:
-Pertanyaan:`;
 
 export function generateMetadata(): Metadata {
   const indexable = isPublicIndexingAllowed();
@@ -54,26 +42,15 @@ export function generateMetadata(): Metadata {
   };
 }
 
-export default function RootLayout({ children }: Readonly<{ children: React.ReactNode }>) {
-  const shopWa = getShopWhatsAppNumber();
-  const instagramUrl = process.env.NEXT_PUBLIC_INSTAGRAM_URL?.trim() ?? "";
-  const waHref = whatsappHref(shopWa, footerHelpMessage);
-  const consultationWaHref = whatsappHref(shopWa, consultationFloatMessage);
-
+export default function RootLayout({
+  children,
+}: Readonly<{ children: React.ReactNode }>) {
   return (
     <html lang="id">
       <body>
-        <div className="mx-auto min-h-screen w-full max-w-md lg:max-w-full bg-(--background)">
-          <PublicShell
-            consultationWaHref={consultationWaHref}
-            footer={
-              <SiteFooter waHref={waHref} instagramUrl={instagramUrl} />
-            }
-          >
-            {children}
-          </PublicShell>
-          <AppToaster />
-        </div>
+        {process.env.NODE_ENV === "development" ? <DevBfcacheGuard /> : null}
+        {children}
+        <AppToaster />
       </body>
     </html>
   );
