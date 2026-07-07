@@ -20,6 +20,13 @@ enum ServiceStatus {
   COMPLETED
 }
 
+enum VisitScheduleStatus {
+  REQUESTED
+  CONFIRMED
+  RESCHEDULED
+  DECLINED
+}
+
 model ServiceOrder {
   id                 String          @id @default(cuid())
   trackingId         String          @unique
@@ -30,7 +37,10 @@ model ServiceOrder {
   issue                  String
   issueAttachmentUrls   Json?
   visitAddress           String          @default("")
-  preferredVisitAt   DateTime?
+  preferredVisitAt       DateTime?
+  confirmedVisitAt       DateTime?
+  visitScheduleStatus    VisitScheduleStatus @default(REQUESTED)
+  visitScheduleNote      String?
   serviceType        ServiceType      @default(HOME_SERVICE)
   status                 ServiceStatus    @default(RECEIVED)
   costConfirmationNote   String?
