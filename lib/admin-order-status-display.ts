@@ -136,6 +136,59 @@ export function serviceTypeAdminLabel(type: ServiceType): string {
 
 export type JenisQueryValue = "store" | "delivery" | "home";
 
+export const ADMIN_SERVICE_TYPE_OPTIONS: ReadonlyArray<{
+  value: JenisQueryValue;
+  label: string;
+}> = [
+  { value: "store", label: "Datang ke Toko" },
+  { value: "delivery", label: "Antar Jemput" },
+  { value: "home", label: "Home Service" },
+];
+
+export function jenisValuesFromQuery(
+  jenis: string | string[] | undefined,
+): JenisQueryValue[] {
+  const raw =
+    jenis == null ? [] : Array.isArray(jenis) ? jenis : jenis.split(",");
+  const valid: JenisQueryValue[] = [];
+  for (const item of raw) {
+    const trimmed = item.trim();
+    if (
+      (trimmed === "store" ||
+        trimmed === "delivery" ||
+        trimmed === "home") &&
+      !valid.includes(trimmed)
+    ) {
+      valid.push(trimmed);
+    }
+  }
+  return valid;
+}
+
+export function serviceTypesFromJenisQuery(
+  jenis: string | string[] | undefined,
+): ServiceType[] {
+  const types: ServiceType[] = [];
+  for (const value of jenisValuesFromQuery(jenis)) {
+    const type = serviceTypeFromJenisQuery(value);
+    if (type && !types.includes(type)) {
+      types.push(type);
+    }
+  }
+  return types;
+}
+
+export function buildAdminOrdersPageHref(
+  tab: OrdersStatusTab,
+  jenisValues: readonly JenisQueryValue[] = [],
+): string {
+  const params = new URLSearchParams({ tab });
+  for (const jenis of jenisValues) {
+    params.append("jenis", jenis);
+  }
+  return `/admin/orders?${params.toString()}`;
+}
+
 export function serviceTypeFromJenisQuery(
   jenis: string | undefined,
 ): ServiceType | undefined {

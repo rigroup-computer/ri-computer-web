@@ -1,5 +1,8 @@
 import { create } from "zustand";
 
+/**
+ * Marketplace filter store — will adopt {@link FilterComponent} when /marketplace is re-enabled.
+ */
 type MarketplaceFilterStore = {
   query: string;
   setQuery: (value: string) => void;

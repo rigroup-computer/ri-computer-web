@@ -1,4 +1,10 @@
 import { z, type ZodError } from "zod";
+import {
+  combineVisitDateTime,
+  formatIsoDateToday,
+  isStoreOpenOnIsoDate,
+  isValidVisitTimeSlot,
+} from "@/lib/store-hours";
 
 export const BOOKING_SERVICE_TYPES = ["REGULAR", "DELIVERY"] as const;
 export type BookableServiceType = (typeof BOOKING_SERVICE_TYPES)[number];
@@ -38,18 +44,82 @@ export const contactBaseSchema = z.object({
     .refine((value) => value.length > 0, { message: "empty" }),
 });
 
-export const deliverySchema = deviceFieldsSchema.merge(contactBaseSchema).extend({
-  visitAddress: z.string().trim().min(5).max(500),
-});
+export const scheduleFieldsSchema = z
+  .object({
+    preferredVisitDate: z.string().trim().min(1),
+    preferredVisitTime: z.string().trim().min(1),
+  })
+  .superRefine((value, ctx) => {
+    if (!/^\d{4}-\d{2}-\d{2}$/.test(value.preferredVisitDate)) {
+      ctx.addIssue({
+        code: "custom",
+        message: "invalid_date",
+        path: ["preferredVisitDate"],
+      });
+      return;
+    }
+    if (value.preferredVisitDate < formatIsoDateToday()) {
+      ctx.addIssue({
+        code: "custom",
+        message: "past_date",
+        path: ["preferredVisitDate"],
+      });
+    }
+    if (!isStoreOpenOnIsoDate(value.preferredVisitDate)) {
+      ctx.addIssue({
+        code: "custom",
+        message: "closed_day",
+        path: ["preferredVisitDate"],
+      });
+    }
+    if (!/^\d{1,2}:\d{2}$/.test(value.preferredVisitTime)) {
+      ctx.addIssue({
+        code: "custom",
+        message: "invalid_time",
+        path: ["preferredVisitTime"],
+      });
+    }
+    if (
+      !isValidVisitTimeSlot(value.preferredVisitDate, value.preferredVisitTime)
+    ) {
+      ctx.addIssue({
+        code: "custom",
+        message: "unavailable_slot",
+        path: ["preferredVisitTime"],
+      });
+    }
+    if (
+      combineVisitDateTime(value.preferredVisitDate, value.preferredVisitTime) ===
+      null
+    ) {
+      ctx.addIssue({
+        code: "custom",
+        message: "invalid_schedule",
+        path: ["preferredVisitDate"],
+      });
+    }
+  });
 
-export const regularSchema = deviceFieldsSchema.merge(contactBaseSchema).extend({
-  customerCity: z.string().trim().min(2).max(100),
-});
+export const deliverySchema = deviceFieldsSchema
+  .merge(contactBaseSchema)
+  .merge(scheduleFieldsSchema)
+  .extend({
+    visitAddress: z.string().trim().min(5).max(500),
+  });
+
+export const regularSchema = deviceFieldsSchema
+  .merge(contactBaseSchema)
+  .merge(scheduleFieldsSchema)
+  .extend({
+    customerCity: z.string().trim().min(2).max(100),
+  });
 
 export const BOOKING_FIELD_LABELS = {
   laptopBrand: "Merek",
   laptopModel: "Tipe",
   deviceSpecs: "Prosesor & VGA",
+  preferredVisitDate: "Tanggal Kunjungan",
+  preferredVisitTime: "Jam Kunjungan",
   issue: "Keluhan / Masalah",
   customerName: "Nama",
   customerPhone: "No. WhatsApp",
@@ -63,6 +133,8 @@ export const BOOKING_FIELD_ORDER: readonly BookingFieldKey[] = [
   "laptopBrand",
   "laptopModel",
   "deviceSpecs",
+  "preferredVisitDate",
+  "preferredVisitTime",
   "issue",
   "customerName",
   "customerPhone",
@@ -101,6 +173,12 @@ function bookingValidationMessageForField(key: unknown): string {
   }
   if (key === "deviceSpecs") {
     return "Mohon isi prosesor dan VGA laptop.";
+  }
+  if (key === "preferredVisitDate") {
+    return "Mohon pilih tanggal kunjungan saat toko buka.";
+  }
+  if (key === "preferredVisitTime") {
+    return "Mohon pilih jam kunjungan yang tersedia.";
   }
   return "Mohon lengkapi semua data yang wajib diisi.";
 }
@@ -144,6 +222,22 @@ function contextualFieldErrorMessage(
 
   if (key === "customerPhone") {
     return customerPhoneErrorMessage(text);
+  }
+
+  if (key === "preferredVisitDate" && text.length > 0) {
+    const issueMessage = issue.message;
+    if (issueMessage === "closed_day") {
+      return "Toko tutup pada hari tersebut. Pilih Senin–Kamis atau Sabtu.";
+    }
+    if (issueMessage === "past_date") {
+      return "Tanggal kunjungan tidak boleh di masa lalu.";
+    }
+  }
+
+  if (key === "preferredVisitTime" && text.length > 0) {
+    if (issue.message === "unavailable_slot") {
+      return "Jam kunjungan tidak tersedia. Pilih slot lain.";
+    }
   }
 
   if (text.length > 0 && issue.code === "too_small" && "minimum" in issue) {
@@ -194,6 +288,8 @@ export type BookingFormValues = {
   laptopBrand: unknown;
   laptopModel: unknown;
   deviceSpecs: unknown;
+  preferredVisitDate: unknown;
+  preferredVisitTime: unknown;
   issue: unknown;
   visitAddress?: unknown;
   customerCity?: unknown;
@@ -215,6 +311,8 @@ export function validateBookingForm(
     laptopBrand: values.laptopBrand,
     laptopModel: values.laptopModel,
     deviceSpecs: values.deviceSpecs,
+    preferredVisitDate: values.preferredVisitDate,
+    preferredVisitTime: values.preferredVisitTime,
     issue: values.issue,
   };
 
