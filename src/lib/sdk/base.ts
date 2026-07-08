@@ -83,6 +83,7 @@ export class ApiClient {
       cloud_name: config.cloudName,
       api_key: config.apiKey,
       api_secret: config.apiSecret,
+      timeout: 120_000,
     });
     return config;
   }
@@ -141,7 +142,15 @@ export class ApiClient {
       return await fn();
     } catch (err) {
       this.log("error", `${operation} failed`, {
-        error: err instanceof Error ? err.message : String(err),
+        error:
+          err instanceof Error
+            ? err.message
+            : typeof err === "object" &&
+                err !== null &&
+                "message" in err &&
+                typeof err.message === "string"
+              ? err.message
+              : String(err),
       });
 
       if (err instanceof SdkError) {
