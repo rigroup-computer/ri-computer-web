@@ -18,6 +18,7 @@ import {
   BOOKING_UPLOAD_ALLOWED_TYPES,
   MAX_ISSUE_ATTACHMENTS,
 } from "@/lib/booking-issue-attachments";
+import { compressBookingImageFile } from "@/lib/client-compress-booking-image";
 import { serviceTypeFromJenisQuery } from "@/lib/admin-order-status-display";
 import { saveTrackingIdToStorage } from "@/lib/tracking-storage";
 import { toast } from "sonner";
@@ -129,8 +130,15 @@ export function BookingForm({
       toast.error(`Maksimal ${MAX_ISSUE_ATTACHMENTS} foto per booking.`);
       return;
     }
+    let uploadFile = file;
+    try {
+      uploadFile = await compressBookingImageFile(file);
+    } catch {
+      uploadFile = file;
+    }
+
     const fd = new FormData();
-    fd.set("file", file);
+    fd.set("file", uploadFile);
     fd.set("existingCount", String(existingCount));
     setUploadingIssueImage(true);
     try {

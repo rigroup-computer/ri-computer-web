@@ -5,7 +5,7 @@
   "scripts": {
     "dev": "next dev --turbopack",
     "dev:clean": "rm -rf .next && next dev --turbopack",
-    "build": "prisma generate && next build",
+    "build": "prisma migrate deploy && prisma generate && next build",
     "migrate:deploy": "prisma migrate deploy",
     "postinstall": "prisma generate",
     "start": "next start",
@@ -22,6 +22,7 @@
     "react": "^19.2.5",
     "react-day-picker": "^9.14.0",
     "react-dom": "^19.2.5",
+    "sharp": "^0.35.3",
     "sonner": "^2.0.7",
     "zod": "^4.4.1",
     "zustand": "^5.0.12"
