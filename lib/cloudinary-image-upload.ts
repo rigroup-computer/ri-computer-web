@@ -1,5 +1,7 @@
 import { v2 as cloudinary } from "cloudinary";
 
+export const CLOUDINARY_UPLOAD_TIMEOUT_MS = 120_000;
+
 export function configureCloudinary(): void {
   const cloud_name = process.env.CLOUDINARY_CLOUD_NAME;
   const api_key = process.env.CLOUDINARY_API_KEY;
@@ -11,7 +13,12 @@ export function configureCloudinary(): void {
     );
   }
 
-  cloudinary.config({ cloud_name, api_key, api_secret });
+  cloudinary.config({
+    cloud_name,
+    api_key,
+    api_secret,
+    timeout: CLOUDINARY_UPLOAD_TIMEOUT_MS,
+  });
 }
 
 /** Unggah buffer gambar ke folder Cloudinary; kembalikan URL delivery (f_auto, q_auto). */
@@ -27,6 +34,7 @@ export async function uploadImageBufferToFolder(
           resource_type: "image",
           use_filename: true,
           unique_filename: true,
+          timeout: CLOUDINARY_UPLOAD_TIMEOUT_MS,
         },
         (err, res) => {
           if (err) {
