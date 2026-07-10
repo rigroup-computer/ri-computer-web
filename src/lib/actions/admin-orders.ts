@@ -189,6 +189,12 @@ export async function submitServiceOrderStatusUpdate(
     status: true,
     trackingId: true,
     customerName: true,
+    customerPhone: true,
+    laptopBrand: true,
+    laptopModel: true,
+    serviceType: true,
+    createdAt: true,
+    costLineItems: true,
   });
 
   if (!prev) {
@@ -262,6 +268,26 @@ export async function submitServiceOrderStatusUpdate(
     };
   }
 
+  if (baseParsed.data.status === ServiceStatus.COMPLETED) {
+    const { buildCompletionWhatsAppMessage } = await import(
+      "@/lib/admin-completion-whatsapp-message"
+    );
+    const { parseStoredCostLineItems } = await import(
+      "@/lib/service-order-cost-items"
+    );
+    return {
+      whatsAppMessage: buildCompletionWhatsAppMessage({
+        customerName: prev.customerName,
+        customerPhone: prev.customerPhone,
+        laptopBrand: prev.laptopBrand,
+        laptopModel: prev.laptopModel,
+        serviceType: prev.serviceType,
+        createdAt: prev.createdAt,
+        costLineItems: parseStoredCostLineItems(prev.costLineItems),
+      }),
+    };
+  }
+
   return {};
 }
 
@@ -331,6 +357,40 @@ export async function appendServiceTimelineNote(formData: FormData) {
     title: parsed.data.title,
     note: parsed.data.note ?? null,
   });
+
+  revalidateOrders();
+}
+
+export async function deleteCompletedServiceOrder(
+  formData: FormData,
+): Promise<void> {
+  const parsed = z
+    .object({
+      orderId: z.string().min(1),
+    })
+    .safeParse({
+      orderId: formData.get("orderId"),
+    });
+
+  if (!parsed.success) {
+    throw new Error("Aksi tidak valid.");
+  }
+
+  await authSdk.requireSession();
+
+  const order = await orderSdk.findByIdSelect(parsed.data.orderId, {
+    status: true,
+  });
+
+  if (!order) {
+    throw new Error("Order tidak ditemukan.");
+  }
+
+  if (order.status !== ServiceStatus.COMPLETED) {
+    throw new Error("Hanya order berstatus Selesai yang dapat dihapus.");
+  }
+
+  await orderSdk.delete(parsed.data.orderId);
 
   revalidateOrders();
 }

@@ -230,6 +230,10 @@ export const orderSdk = {
     return prisma.serviceOrder.update({ where: { id }, data });
   },
 
+  async delete(id: string) {
+    return prisma.serviceOrder.delete({ where: { id } });
+  },
+
   async createTimeline(data: Prisma.ServiceTimelineUncheckedCreateInput) {
     return prisma.serviceTimeline.create({ data });
   },
