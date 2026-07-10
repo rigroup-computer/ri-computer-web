@@ -14,6 +14,7 @@ type OrderDetailBodyProps = Readonly<{
   order: AdminSerializedOrder;
   onAfterStatusChange: () => void;
   onRefreshAfterAction: (action: () => Promise<void>) => Promise<void>;
+  onOrderDeleted: () => void;
 }>;
 
 const EMPTY_FIELD = "—";
@@ -22,6 +23,7 @@ export function OrderDetailBody({
   order,
   onAfterStatusChange,
   onRefreshAfterAction,
+  onOrderDeleted,
 }: OrderDetailBodyProps) {
   const { complaint, deviceSpecs } = parseStoredOrderIssue(order.issue);
   const scheduleGateActive = isScheduleGateActive(order);
@@ -145,6 +147,7 @@ export function OrderDetailBody({
           order={order}
           onAfterStatusChange={onAfterStatusChange}
           onRefreshAfterAction={onRefreshAfterAction}
+          onOrderDeleted={onOrderDeleted}
         />
       ) : null}
     </div>

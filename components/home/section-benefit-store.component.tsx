@@ -55,8 +55,8 @@ export default function SectionBenefitStoreComponent() {
             <BenefitRow
               icon="/icons/svg-suku-cadang.svg"
               iconBg="bg-[#FBC02D1A]"
-              title="Suku Cadang Original"
-              description="Hanya menggunakan komponen asli berkualitas tinggi untuk menjaga performa laptop Anda."
+              title="Teknisi Berpengalaman"
+              description="Setiap perangkat ditangani dengan teliti, dari pengecekan awal hingga penyerahan kembali."
             />
           </div>
 

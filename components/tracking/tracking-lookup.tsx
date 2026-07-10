@@ -16,6 +16,7 @@ import {
 } from "@/lib/store-hours";
 import { useSavedTrackingIds } from "@/lib/use-saved-tracking-ids";
 import { whatsappHref } from "@/lib/whatsapp";
+import { parseStoredOrderIssue } from "@/lib/order-issue-content";
 import { ServiceProgress } from "@/components/tracking/service-progress";
 import { Icon } from "@iconify/react";
 
@@ -50,6 +51,7 @@ function OrderCard({
     shopWhatsApp ?? "",
     "Halo Ri Computer saya ingin bertanya mengenai servis.",
   );
+  const { complaint } = parseStoredOrderIssue(order.issue);
 
   return (
     <article className="">
@@ -179,7 +181,7 @@ function OrderCard({
             Keluhan
           </p>
           <p className="whitespace-pre-wrap text-sm text-slate-800">
-            {order.issue}
+            {complaint}
           </p>
         </div>
 

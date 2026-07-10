@@ -3,6 +3,10 @@ import {
   MarketPreviewItem,
 } from "./market-strip";
 import Link from "next/link";
+import { getShopWhatsAppNumber, whatsappHref } from "@/lib/whatsapp";
+
+const secondLaptopInquiryMessage =
+  "Halo min, apakah ada laptop second yang ready?";
 
 const dummyItems: MarketPreviewItem[] = [
   {
@@ -41,6 +45,10 @@ const dummyItems: MarketPreviewItem[] = [
 
 export default function SectionSellComponent() {
   const inventoryItems = dummyItems;
+  const waHref = whatsappHref(
+    getShopWhatsAppNumber(),
+    secondLaptopInquiryMessage,
+  );
 
   return (
     <section
@@ -78,12 +86,20 @@ export default function SectionSellComponent() {
             Nantikan koleksi unit berkualitas tinggi kami yang akan segera
             hadir.
           </p>
-          <Link
-            href="#"
-            className="mt-auto inline-flex min-h-11 items-center justify-center rounded-lg bg-gray-100 px-6 text-xs font-semibold text-primary hover:bg-gray-200 md:text-sm"
-          >
-            Segera Hadir
-          </Link>
+          {waHref ? (
+            <Link
+              href={waHref}
+              target="_blank"
+              rel="noopener noreferrer"
+              className="mt-auto inline-flex min-h-11 items-center justify-center rounded-lg bg-gray-100 px-6 text-xs font-semibold text-primary hover:bg-gray-200 md:text-sm"
+            >
+              Tanya via WhatsApp
+            </Link>
+          ) : (
+            <span className="mt-auto inline-flex min-h-11 items-center justify-center rounded-lg bg-gray-100/60 px-6 text-xs font-semibold text-white/70 md:text-sm">
+              Segera Hadir
+            </span>
+          )}
         </div>
       </div>
     </section>

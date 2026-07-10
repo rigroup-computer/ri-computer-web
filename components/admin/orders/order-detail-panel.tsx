@@ -19,6 +19,7 @@ type OrderDetailPanelProps = Readonly<{
   onTransitionEnd?: (event: TransitionEvent<HTMLElement>) => void;
   onAfterStatusChange: () => void;
   onRefreshAfterAction: (action: () => Promise<void>) => Promise<void>;
+  onOrderDeleted: () => void;
 }>;
 
 function DetailHeader({
@@ -59,6 +60,7 @@ export function OrderDetailPanel({
   onTransitionEnd,
   onAfterStatusChange,
   onRefreshAfterAction,
+  onOrderDeleted,
 }: OrderDetailPanelProps) {
   return (
     <div
@@ -96,6 +98,7 @@ export function OrderDetailPanel({
             order={order}
             onAfterStatusChange={onAfterStatusChange}
             onRefreshAfterAction={onRefreshAfterAction}
+            onOrderDeleted={onOrderDeleted}
           />
         </div>
         <div id="order-detail-footer" className="shrink-0" />

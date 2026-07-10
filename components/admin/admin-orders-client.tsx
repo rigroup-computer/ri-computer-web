@@ -255,6 +255,10 @@ export function AdminOrdersClient({
           onTransitionEnd={onPanelTransitionEnd}
           onAfterStatusChange={() => router.refresh()}
           onRefreshAfterAction={refreshAfterAction}
+          onOrderDeleted={() => {
+            requestClose();
+            router.refresh();
+          }}
         />
       ) : null}
     </>

@@ -7,7 +7,11 @@ import { ServiceStatus } from "@prisma/client";
 import { Icon } from "@iconify/react";
 import { toast } from "sonner";
 
-import { submitServiceOrderStatusUpdate } from "@/src/lib/actions/admin-orders";
+import {
+  deleteCompletedServiceOrder,
+  submitServiceOrderStatusUpdate,
+} from "@/src/lib/actions/admin-orders";
+import { buildCompletionWhatsAppMessage } from "@/lib/admin-completion-whatsapp-message";
 import {
   SERVICE_ORDER_STATUS_FLOW,
   getAllowedNextStatuses,
@@ -18,6 +22,7 @@ import {
   sumCostLineItems,
   type ServiceOrderCostLineItem,
 } from "@/lib/service-order-cost-items";
+import { ConfirmDialog } from "@/components/ui/confirm-dialog";
 
 import {
   OrderCostItemsForm,
@@ -34,6 +39,7 @@ type OrderStatusUpdateSectionProps = Readonly<{
   order: AdminSerializedOrder;
   onAfterStatusChange: () => void;
   onRefreshAfterAction: (action: () => Promise<void>) => Promise<void>;
+  onOrderDeleted: () => void;
 }>;
 
 const ADMIN_STEP_LABELS: Record<ServiceStatus, string> = {
@@ -67,9 +73,11 @@ export function OrderStatusUpdateSection({
   order,
   onAfterStatusChange,
   onRefreshAfterAction,
+  onOrderDeleted,
 }: OrderStatusUpdateSectionProps) {
   const [draftStatus, setDraftStatus] = useState<ServiceStatus | null>(null);
   const [pending, setPending] = useState(false);
+  const [deleteDialogOpen, setDeleteDialogOpen] = useState(false);
   const [lineItems, setLineItems] = useState<ServiceOrderCostLineItem[]>(() =>
     createInitialCostLineItems(order.costLineItems),
   );
@@ -83,7 +91,7 @@ export function OrderStatusUpdateSection({
     hasDraft && draftStatus === ServiceStatus.READY;
   const showSimpleConfirm =
     hasDraft && draftStatus !== ServiceStatus.READY;
-  const showFooter = showCostForm || showSimpleConfirm;
+  const showFooter = showCostForm || showSimpleConfirm || isTerminal;
   const costTotal = sumCostLineItems(
     lineItems.filter((item) => item.name.trim() && item.price > 0),
   );
@@ -99,9 +107,10 @@ export function OrderStatusUpdateSection({
     if (!scrollEl) {
       return;
     }
-    scrollEl.classList.toggle("pb-40", showFooter);
+    scrollEl.classList.toggle("pb-8", showFooter);
+    scrollEl.classList.toggle("lg:pb-12", showFooter);
     return () => {
-      scrollEl.classList.remove("pb-40");
+      scrollEl.classList.remove("pb-8", "lg:pb-12");
     };
   }, [showFooter]);
 
@@ -205,6 +214,46 @@ export function OrderStatusUpdateSection({
     void submitStatusUpdate(draftStatus);
   }
 
+  function handleResendCompletionWhatsApp(): void {
+    const message = buildCompletionWhatsAppMessage({
+      customerName: order.customerName,
+      customerPhone: order.customerPhone,
+      laptopBrand: order.laptopBrand,
+      laptopModel: order.laptopModel,
+      serviceType: order.serviceType,
+      createdAt: new Date(order.createdAt),
+      costLineItems: order.costLineItems,
+    });
+    const href = whatsappHref(order.customerPhone, message);
+    if (href) {
+      window.open(href, "_blank", "noopener,noreferrer");
+      return;
+    }
+    toast.error("Nomor WhatsApp pelanggan tidak valid.");
+  }
+
+  async function handleDeleteCompletedOrder(): Promise<void> {
+    setPending(true);
+    try {
+      const fd = new FormData();
+      fd.set("orderId", order.id);
+      await deleteCompletedServiceOrder(fd);
+      toast.success("Order dihapus.");
+      setDeleteDialogOpen(false);
+      onOrderDeleted();
+    } catch (err) {
+      toast.error(err instanceof Error ? err.message : "Gagal menghapus order.");
+    } finally {
+      setPending(false);
+    }
+  }
+
+  const footerVariant = showCostForm
+    ? "cost"
+    : isTerminal
+      ? "resend-completion"
+      : "simple";
+
   return (
     <>
       <div className="px-4 lg:px-5 py-4 bg-white mb-2">
@@ -269,6 +318,9 @@ export function OrderStatusUpdateSection({
                 {serviceStatusLabel(draftStatus)}
               </span>
               ?
+              {draftStatus === ServiceStatus.COMPLETED
+                ? " Setelah disimpan, WhatsApp pelanggan akan terbuka dengan pesan konfirmasi selesai."
+                : null}
             </p>
           </div>
         ) : null}
@@ -283,19 +335,45 @@ export function OrderStatusUpdateSection({
       {footerEl && showFooter
         ? createPortal(
             <OrderDetailActionFooter
-              variant={showCostForm ? "cost" : "simple"}
+              variant={footerVariant}
               total={costTotal}
               pending={pending}
               draftLabel={
                 draftStatus ? serviceStatusLabel(draftStatus) : undefined
               }
+              notifyCustomerViaWhatsApp={
+                draftStatus === ServiceStatus.COMPLETED
+              }
               onSubmit={
-                showCostForm ? handleCostFormSubmit : handleSimpleConfirm
+                showCostForm
+                  ? handleCostFormSubmit
+                  : isTerminal
+                    ? handleResendCompletionWhatsApp
+                    : handleSimpleConfirm
+              }
+              onDelete={
+                isTerminal
+                  ? () => {
+                      setDeleteDialogOpen(true);
+                    }
+                  : undefined
               }
             />,
             footerEl,
           )
         : null}
+
+      <ConfirmDialog
+        open={deleteDialogOpen}
+        onOpenChange={setDeleteDialogOpen}
+        title="Hapus data order?"
+        description={`Order ${order.trackingId} akan dihapus permanen. Data tidak dapat dikembalikan.`}
+        confirmLabel="Hapus"
+        cancelLabel="Batal"
+        variant="danger"
+        pending={pending}
+        onConfirm={handleDeleteCompletedOrder}
+      />
     </>
   );
 }
