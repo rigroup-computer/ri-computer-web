@@ -88,8 +88,8 @@ export default function SectionBannerComponent() {
                 src="/images/assets/hero-desktop.webp"
                 alt="Teknisi Ri Computer sedang memperbaiki laptop"
                 width={600}
-                height={500}
-                className="h-[500px] w-full object-cover"
+                height={450}
+                className="h-[450px] w-full object-cover object-left"
                 priority
               />
             </div>

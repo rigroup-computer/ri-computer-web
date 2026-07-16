@@ -13,6 +13,8 @@ type BookingSuccessPanelProps = Readonly<{
   success: CreateServiceOrderSuccess;
 }>;
 
+const noRekening = "8090638379";
+
 export function BookingSuccessPanel({ success }: BookingSuccessPanelProps) {
   const paymentWa = success.shopWhatsApp
     ? whatsappHref(
@@ -72,15 +74,15 @@ export function BookingSuccessPanel({ success }: BookingSuccessPanelProps) {
         </p>
         <div className="my-4 flex items-center justify-between rounded-md bg-[#FFFFFFFF] p-2">
           <div>
-            <p className="font-semibold text-[#171A1FFF]">BCA 0084402466</p>
-            <p className="text-xs text-[#565D6DFF]">an Ri Group Raya Sejahtera</p>
+            <p className="font-semibold text-[#171A1FFF]">BCA {noRekening}</p>
+            <p className="text-xs text-[#565D6DFF]">an PT. Ri Group Raya Sejahtera</p>
           </div>
           <button
             type="button"
             aria-label="Salin nomor rekening"
             onClick={async () => {
               try {
-                await navigator.clipboard.writeText("0084402466");
+                await navigator.clipboard.writeText(noRekening);
                 toast.success("Nomor rekening berhasil disalin");
               } catch {
                 toast.error("Gagal bisa menyalin.");
