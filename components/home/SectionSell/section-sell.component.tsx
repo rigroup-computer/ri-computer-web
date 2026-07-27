@@ -11,7 +11,7 @@ const secondLaptopInquiryMessage =
 const dummyItems: MarketPreviewItem[] = [
   {
     id: "fallback-1",
-    title: "MacBook Pro M2",
+    title: "Produk Apple",
     specs: "8GB / 256GB SSD",
     priceLabel: "Rp 18.499.000",
     imageUrl: "/images/assets/IMG_10.webp",
@@ -19,14 +19,14 @@ const dummyItems: MarketPreviewItem[] = [
   },
   {
     id: "fallback-2",
-    title: "ROG Zephyrus",
+    title: "Laptop Gaming",
     specs: "RTX 4060 / 1TB",
     priceLabel: "Rp 22.999.000",
     imageUrl: "/images/assets/IMG_11.webp",
   },
   {
     id: "fallback-3",
-    title: "Dell XPS 13",
+    title: "Laptop Kantor",
     specs: "i7 / 16GB RAM",
     priceLabel: "Rp 16.250.000",
     imageUrl: "/images/assets/IMG_12.webp",
@@ -35,7 +35,7 @@ const dummyItems: MarketPreviewItem[] = [
 
   {
     id: "fallback-4",
-    title: "ThinkPad X1",
+    title: "Laptop Sekolah",
     specs: "Carbon Gen 10",
     priceLabel: "Rp 19.800.000",
     imageUrl: "/images/assets/IMG_10.webp",
