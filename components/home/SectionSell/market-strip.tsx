@@ -58,9 +58,9 @@ export function MarketHorizontalStrip({
               ) : null}
             </div>
             <div className="p-3">
-              <p className="mb-1 truncate text-[10px] lg:text-xs font-medium uppercase text-[#5A5F68]">
+              {/* <p className="mb-1 truncate text-[10px] lg:text-xs font-medium uppercase text-[#5A5F68]">
                 {item.specs}
-              </p>
+              </p> */}
               <h3 className="mb-1 truncate text-sm lg:text-base font-bold text-mate-black">
                 {item.title}
               </h3>
