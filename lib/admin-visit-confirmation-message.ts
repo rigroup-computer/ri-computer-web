@@ -1,3 +1,5 @@
+import type { ServiceType } from "@prisma/client";
+
 import { formatVisitDateTimeId } from "@/lib/store-hours";
 
 function getIndonesianDaypartGreeting(now = new Date()): string {
@@ -15,14 +17,49 @@ function getIndonesianDaypartGreeting(now = new Date()): string {
   return "Malam";
 }
 
+export type VisitConfirmationWhatsAppInput = Readonly<{
+  customerName: string;
+  trackingId: string;
+  confirmedVisitAt: Date;
+  serviceType: ServiceType;
+  visitAddress?: string | null;
+  note?: string | null;
+}>;
+
+function appendAdminNote(lines: string[], note?: string | null): void {
+  if (note?.trim()) {
+    lines.push("", "Catatan admin:", note.trim());
+  }
+}
+
 export function buildVisitConfirmationWhatsAppMessage(
-  customerName: string,
-  trackingId: string,
-  confirmedVisitAt: Date,
-  note?: string | null,
+  input: VisitConfirmationWhatsAppInput,
 ): string {
+  const {
+    customerName,
+    trackingId,
+    confirmedVisitAt,
+    serviceType,
+    visitAddress,
+    note,
+  } = input;
   const greeting = getIndonesianDaypartGreeting();
   const scheduleLabel = formatVisitDateTimeId(confirmedVisitAt);
+
+  if (serviceType === "DELIVERY") {
+    const addressLabel = visitAddress?.trim() || "-";
+    const lines = [
+      `Selamat ${greeting} ${customerName.trim()}, kami dari Ri Computer mengonfirmasi jadwal delivery servis Anda.`,
+      "",
+      `Nomor service: ${trackingId}`,
+      `Jadwal dikonfirmasi: ${scheduleLabel} WIB`,
+      `Alamat: ${addressLabel}`,
+      "",
+      "Mohon stand by sesuai jadwal di atas. Jika ada perubahan, balas pesan ini ya ka.",
+    ];
+    appendAdminNote(lines, note);
+    return lines.join("\n");
+  }
 
   const lines = [
     `Selamat ${greeting} ${customerName.trim()}, kami dari Ri Computer mengonfirmasi jadwal kunjungan/servis Anda.`,
@@ -32,11 +69,7 @@ export function buildVisitConfirmationWhatsAppMessage(
     "",
     "Mohon datang sesuai jadwal di atas. Jika ada perubahan, balas pesan ini ya ka.",
   ];
-
-  if (note?.trim()) {
-    lines.push("", "Catatan admin:", note.trim());
-  }
-
+  appendAdminNote(lines, note);
   return lines.join("\n");
 }
 

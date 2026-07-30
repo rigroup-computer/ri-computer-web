@@ -71,6 +71,8 @@ export async function confirmServiceVisitSchedule(
     customerPhone: true,
     preferredVisitAt: true,
     visitScheduleStatus: true,
+    serviceType: true,
+    visitAddress: true,
   });
 
   if (!order) {
@@ -140,12 +142,14 @@ export async function confirmServiceVisitSchedule(
 
   const whatsAppMessage =
     nextStatus === VisitScheduleStatus.CONFIRMED
-      ? buildVisitConfirmationWhatsAppMessage(
-          order.customerName,
-          order.trackingId,
+      ? buildVisitConfirmationWhatsAppMessage({
+          customerName: order.customerName,
+          trackingId: order.trackingId,
           confirmedVisitAt,
+          serviceType: order.serviceType,
+          visitAddress: order.visitAddress,
           note,
-        )
+        })
       : buildVisitRescheduleWhatsAppMessage(
           order.customerName,
           order.trackingId,
@@ -386,6 +390,7 @@ export async function cancelReceivedServiceOrder(
   const order = await orderSdk.findByIdSelect(parsed.data.orderId, {
     status: true,
     customerName: true,
+    serviceType: true,
   });
 
   if (!order) {
@@ -396,7 +401,10 @@ export async function cancelReceivedServiceOrder(
     throw new Error("Hanya pesanan Antrian yang dapat dibatalkan.");
   }
 
-  const whatsAppMessage = buildNoShowCancelWhatsAppMessage(order.customerName);
+  const whatsAppMessage = buildNoShowCancelWhatsAppMessage(
+    order.customerName,
+    order.serviceType,
+  );
 
   await orderSdk.delete(parsed.data.orderId);
 
