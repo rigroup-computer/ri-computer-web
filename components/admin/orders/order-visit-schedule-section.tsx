@@ -1,24 +1,29 @@
 "use client";
 
 import { useMemo, useState } from "react";
-import { VisitScheduleStatus } from "@prisma/client";
+import { ServiceStatus, VisitScheduleStatus } from "@prisma/client";
 import { Icon } from "@iconify/react";
 import { toast } from "sonner";
-import { confirmServiceVisitSchedule } from "@/src/lib/actions/admin-orders";
+import {
+  cancelReceivedServiceOrder,
+  confirmServiceVisitSchedule,
+} from "@/src/lib/actions/admin-orders";
 import {
   formatVisitDateTimeId,
   getAdminTimeSlotsForDate,
   isStoreOpenOnIsoDate,
   visitScheduleStatusLabel,
 } from "@/lib/store-hours";
-import { serviceTypeAdminLabel } from "@/lib/admin-order-status-display";
+import { formatTrackingIdDisplay } from "@/lib/admin-order-status-display";
 import { whatsappHref } from "@/lib/whatsapp";
 import { AdminVisitDateField } from "@/components/admin/orders/admin-visit-date-field";
+import { ConfirmDialog } from "@/components/ui/confirm-dialog";
 import type { AdminSerializedOrder } from "./order-row-data";
 
 type OrderVisitScheduleSectionProps = Readonly<{
   order: AdminSerializedOrder;
   onAfterAction: () => void;
+  onOrderDeleted: () => void;
 }>;
 
 function isoDateFromPreferred(preferredVisitAt: string | null): string {
@@ -88,6 +93,7 @@ function visitScheduleStatusChipClassName(
 export function OrderVisitScheduleSection({
   order,
   onAfterAction,
+  onOrderDeleted,
 }: OrderVisitScheduleSectionProps) {
   const scheduleAt = activeScheduleAt(order);
   const initialDate = isoDateFromPreferred(scheduleAt);
@@ -97,6 +103,9 @@ export function OrderVisitScheduleSection({
   const [visitTime, setVisitTime] = useState(initialTime);
   const [note, setNote] = useState(order.visitScheduleNote ?? "");
   const [pending, setPending] = useState(false);
+  const [cancelDialogOpen, setCancelDialogOpen] = useState(false);
+
+  const canCancelOrder = order.status === ServiceStatus.RECEIVED;
 
   const timeSlots = useMemo(
     () => (visitDate ? getAdminTimeSlotsForDate(visitDate) : []),
@@ -157,6 +166,41 @@ export function OrderVisitScheduleSection({
     } catch (err) {
       toast.error(
         err instanceof Error ? err.message : "Gagal memperbarui jadwal.",
+      );
+    } finally {
+      setPending(false);
+    }
+  }
+
+  async function handleCancelOrder(): Promise<void> {
+    setPending(true);
+    try {
+      const fd = new FormData();
+      fd.set("orderId", order.id);
+      const result = await cancelReceivedServiceOrder(fd);
+
+      toast.success("Pesanan dibatalkan dan dihapus.");
+      setCancelDialogOpen(false);
+
+      const href = whatsappHref(order.customerPhone, result.whatsAppMessage);
+      if (href) {
+        const opened = window.open(href, "_blank", "noopener,noreferrer");
+        if (!opened) {
+          toast("Buka WhatsApp pelanggan", {
+            action: {
+              label: "Buka",
+              onClick: () => window.open(href, "_blank", "noopener,noreferrer"),
+            },
+          });
+        }
+      } else {
+        toast.error("Nomor WhatsApp pelanggan tidak valid.");
+      }
+
+      onOrderDeleted();
+    } catch (err) {
+      toast.error(
+        err instanceof Error ? err.message : "Gagal membatalkan pesanan.",
       );
     } finally {
       setPending(false);
@@ -316,7 +360,49 @@ export function OrderVisitScheduleSection({
             </div>
           </>
         ) : null}
+
+        {canCancelOrder ? (
+          <div className="mt-4 border-t border-[#dee1e6] pt-4">
+            <button
+              type="button"
+              disabled={pending}
+              aria-haspopup="dialog"
+              aria-busy={pending}
+              onClick={() => setCancelDialogOpen(true)}
+              className="flex min-h-11 w-full touch-manipulation items-center justify-center gap-2 rounded-xl border border-[#f5c2c7] bg-[#fff5f5] px-4 text-sm font-semibold text-[#b42318] focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[#b42318] disabled:opacity-60"
+            >
+              <Icon
+                icon="mdi:trash-can-outline"
+                width={18}
+                height={18}
+                aria-hidden
+              />
+              Batalkan pesanan
+            </button>
+            <p className="mt-2 text-xs text-[#565d6d]">
+              Untuk pelanggan tidak ada di lokasi atau batal servis. Data pesanan
+              dihapus permanen.
+            </p>
+          </div>
+        ) : null}
       </div>
+
+      <ConfirmDialog
+        open={cancelDialogOpen}
+        onOpenChange={setCancelDialogOpen}
+        title="Batalkan & hapus pesanan ini?"
+        description={`Pesanan ${formatTrackingIdDisplay(order.trackingId)} — ${order.customerName} akan dihapus permanen beserta riwayat timeline. Data tidak dapat dikembalikan.`}
+        confirmLabel="Ya, batalkan & hapus"
+        cancelLabel="Kembali"
+        variant="danger"
+        pending={pending}
+        onConfirm={handleCancelOrder}
+      >
+        <p className="rounded-lg bg-[#fff5f5] px-3 py-2 text-xs text-[#b42318]">
+          Setelah dihapus, WhatsApp pelanggan akan terbuka agar Anda bisa mengirim
+          pesan pembatalan.
+        </p>
+      </ConfirmDialog>
     </section>
   );
 }
