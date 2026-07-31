@@ -9,6 +9,7 @@ import {
   formatCostLineItemsForTimelineNote,
   serviceOrderCostLineItemsSchema,
 } from "@/lib/service-order-cost-items";
+import { buildNoShowCancelWhatsAppMessage } from "@/lib/admin-cancel-whatsapp-message";
 import {
   buildVisitConfirmationWhatsAppMessage,
   buildVisitDeclineWhatsAppMessage,
@@ -70,6 +71,8 @@ export async function confirmServiceVisitSchedule(
     customerPhone: true,
     preferredVisitAt: true,
     visitScheduleStatus: true,
+    serviceType: true,
+    visitAddress: true,
   });
 
   if (!order) {
@@ -139,12 +142,14 @@ export async function confirmServiceVisitSchedule(
 
   const whatsAppMessage =
     nextStatus === VisitScheduleStatus.CONFIRMED
-      ? buildVisitConfirmationWhatsAppMessage(
-          order.customerName,
-          order.trackingId,
+      ? buildVisitConfirmationWhatsAppMessage({
+          customerName: order.customerName,
+          trackingId: order.trackingId,
           confirmedVisitAt,
+          serviceType: order.serviceType,
+          visitAddress: order.visitAddress,
           note,
-        )
+        })
       : buildVisitRescheduleWhatsAppMessage(
           order.customerName,
           order.trackingId,
@@ -359,6 +364,53 @@ export async function appendServiceTimelineNote(formData: FormData) {
   });
 
   revalidateOrders();
+}
+
+export type CancelReceivedServiceOrderResult = Readonly<{
+  whatsAppMessage: string;
+}>;
+
+export async function cancelReceivedServiceOrder(
+  formData: FormData,
+): Promise<CancelReceivedServiceOrderResult> {
+  const parsed = z
+    .object({
+      orderId: z.string().min(1),
+    })
+    .safeParse({
+      orderId: formData.get("orderId"),
+    });
+
+  if (!parsed.success) {
+    throw new Error("Aksi tidak valid.");
+  }
+
+  await authSdk.requireSession();
+
+  const order = await orderSdk.findByIdSelect(parsed.data.orderId, {
+    status: true,
+    customerName: true,
+    serviceType: true,
+  });
+
+  if (!order) {
+    throw new Error("Order tidak ditemukan.");
+  }
+
+  if (order.status !== ServiceStatus.RECEIVED) {
+    throw new Error("Hanya pesanan Antrian yang dapat dibatalkan.");
+  }
+
+  const whatsAppMessage = buildNoShowCancelWhatsAppMessage(
+    order.customerName,
+    order.serviceType,
+  );
+
+  await orderSdk.delete(parsed.data.orderId);
+
+  revalidateOrders();
+
+  return { whatsAppMessage };
 }
 
 export async function deleteCompletedServiceOrder(

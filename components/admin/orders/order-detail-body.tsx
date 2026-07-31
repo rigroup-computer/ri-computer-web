@@ -137,9 +137,10 @@ export function OrderDetailBody({
       </div>
 
       <OrderVisitScheduleSection
-        key={`${order.id}-${order.visitScheduleStatus}-${order.confirmedVisitAt ?? ""}`}
+        key={`${order.id}-${order.status}-${order.visitScheduleStatus}-${order.confirmedVisitAt ?? ""}`}
         order={order}
         onAfterAction={onAfterStatusChange}
+        onOrderDeleted={onOrderDeleted}
       />
 
       {!scheduleGateActive ? (
