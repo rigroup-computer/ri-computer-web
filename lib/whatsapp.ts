@@ -22,3 +22,10 @@ export function whatsappHref(phone: string, message?: string) {
   const text = message ? `?text=${encodeURIComponent(message)}` : "";
   return `https://wa.me/${target}${text}`;
 }
+
+export function whatsappDeepLink(phone: string, message?: string): string | null {
+  const target = normalizeWhatsAppTarget(phone);
+  if (!target) return null;
+  const text = message ? `&text=${encodeURIComponent(message)}` : "";
+  return `whatsapp://send?phone=${target}${text}`;
+}

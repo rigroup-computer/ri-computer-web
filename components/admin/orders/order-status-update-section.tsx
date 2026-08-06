@@ -17,7 +17,11 @@ import {
   getAllowedNextStatuses,
 } from "@/lib/service-order-status-transitions";
 import { serviceStatusLabel } from "@/lib/service-status-label";
-import { whatsappHref } from "@/lib/whatsapp";
+import {
+  closeWhatsAppTab,
+  dispatchCustomerWhatsApp,
+  prepareWhatsAppTab,
+} from "@/lib/open-whatsapp-tab";
 import {
   sumCostLineItems,
   type ServiceOrderCostLineItem,
@@ -142,6 +146,7 @@ export function OrderStatusUpdateSection({
       costConfirmationNote?: string;
     },
   ): Promise<void> {
+    const waTab = prepareWhatsAppTab();
     setPending(true);
     try {
       const fd = new FormData();
@@ -165,17 +170,23 @@ export function OrderStatusUpdateSection({
       const result = await submitServiceOrderStatusUpdate(fd);
       toast.success("Status diperbarui.");
       setDraftStatus(null);
-      onAfterStatusChange();
 
       if (result.whatsAppMessage) {
-        const href = whatsappHref(order.customerPhone, result.whatsAppMessage);
-        if (href) {
-          window.open(href, "_blank", "noopener,noreferrer");
-        } else {
+        const waResult = dispatchCustomerWhatsApp(
+          order.customerPhone,
+          result.whatsAppMessage,
+          waTab,
+        );
+        if (waResult.status === "invalid_phone") {
           toast.error("Nomor WhatsApp pelanggan tidak valid.");
         }
+      } else {
+        closeWhatsAppTab(waTab);
       }
+
+      onAfterStatusChange();
     } catch (err) {
+      closeWhatsAppTab(waTab);
       toast.error(
         err instanceof Error ? err.message : "Gagal memperbarui status.",
       );
@@ -224,12 +235,15 @@ export function OrderStatusUpdateSection({
       createdAt: new Date(order.createdAt),
       costLineItems: order.costLineItems,
     });
-    const href = whatsappHref(order.customerPhone, message);
-    if (href) {
-      window.open(href, "_blank", "noopener,noreferrer");
-      return;
+    const waTab = prepareWhatsAppTab();
+    const waResult = dispatchCustomerWhatsApp(
+      order.customerPhone,
+      message,
+      waTab,
+    );
+    if (waResult.status === "invalid_phone") {
+      toast.error("Nomor WhatsApp pelanggan tidak valid.");
     }
-    toast.error("Nomor WhatsApp pelanggan tidak valid.");
   }
 
   async function handleDeleteCompletedOrder(): Promise<void> {

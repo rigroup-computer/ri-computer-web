@@ -15,7 +15,11 @@ import {
   visitScheduleStatusLabel,
 } from "@/lib/store-hours";
 import { formatTrackingIdDisplay } from "@/lib/admin-order-status-display";
-import { whatsappHref } from "@/lib/whatsapp";
+import {
+  closeWhatsAppTab,
+  dispatchCustomerWhatsApp,
+  prepareWhatsAppTab,
+} from "@/lib/open-whatsapp-tab";
 import { AdminVisitDateField } from "@/components/admin/orders/admin-visit-date-field";
 import { ConfirmDialog } from "@/components/ui/confirm-dialog";
 import type { AdminSerializedOrder } from "./order-row-data";
@@ -132,6 +136,7 @@ export function OrderVisitScheduleSection({
       return;
     }
 
+    const waTab = prepareWhatsAppTab();
     setPending(true);
     try {
       const fd = new FormData();
@@ -153,17 +158,23 @@ export function OrderVisitScheduleSection({
             ? "Jadwal alternatif disimpan."
             : "Preferensi ditolak. Ajukan jadwal alternatif.",
       );
-      onAfterAction();
 
       if (result.whatsAppMessage) {
-        const href = whatsappHref(order.customerPhone, result.whatsAppMessage);
-        if (href) {
-          window.open(href, "_blank", "noopener,noreferrer");
-        } else {
+        const waResult = dispatchCustomerWhatsApp(
+          order.customerPhone,
+          result.whatsAppMessage,
+          waTab,
+        );
+        if (waResult.status === "invalid_phone") {
           toast.error("Nomor WhatsApp pelanggan tidak valid.");
         }
+      } else {
+        closeWhatsAppTab(waTab);
       }
+
+      onAfterAction();
     } catch (err) {
+      closeWhatsAppTab(waTab);
       toast.error(
         err instanceof Error ? err.message : "Gagal memperbarui jadwal.",
       );
@@ -173,6 +184,7 @@ export function OrderVisitScheduleSection({
   }
 
   async function handleCancelOrder(): Promise<void> {
+    const waTab = prepareWhatsAppTab();
     setPending(true);
     try {
       const fd = new FormData();
@@ -182,23 +194,18 @@ export function OrderVisitScheduleSection({
       toast.success("Pesanan dibatalkan dan dihapus.");
       setCancelDialogOpen(false);
 
-      const href = whatsappHref(order.customerPhone, result.whatsAppMessage);
-      if (href) {
-        const opened = window.open(href, "_blank", "noopener,noreferrer");
-        if (!opened) {
-          toast("Buka WhatsApp pelanggan", {
-            action: {
-              label: "Buka",
-              onClick: () => window.open(href, "_blank", "noopener,noreferrer"),
-            },
-          });
-        }
-      } else {
+      const waResult = dispatchCustomerWhatsApp(
+        order.customerPhone,
+        result.whatsAppMessage,
+        waTab,
+      );
+      if (waResult.status === "invalid_phone") {
         toast.error("Nomor WhatsApp pelanggan tidak valid.");
       }
 
       onOrderDeleted();
     } catch (err) {
+      closeWhatsAppTab(waTab);
       toast.error(
         err instanceof Error ? err.message : "Gagal membatalkan pesanan.",
       );
