@@ -3,6 +3,8 @@ import type { NextConfig } from "next";
 const isDev = process.env.NODE_ENV === "development";
 
 const nextConfig: NextConfig = {
+  /** Keep native sharp binaries on the filesystem (required on Vercel Linux). */
+  serverExternalPackages: ["sharp"],
   experimental: {
     serverActions: {
       /** Unggah foto booking/inventaris hingga 5 MB (+ overhead multipart). */

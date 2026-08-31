@@ -60,8 +60,13 @@ export async function getClientIp(): Promise<string> {
 export async function consumeActionRateLimit(
   config: (typeof RATE_LIMIT_SCOPES)[keyof typeof RATE_LIMIT_SCOPES],
 ): Promise<RateLimitResult> {
-  const ip = await getClientIp();
-  return rateLimitSdk.consumeRateLimit(config.scope, ip, config);
+  try {
+    const ip = await getClientIp();
+    return await rateLimitSdk.consumeRateLimit(config.scope, ip, config);
+  } catch {
+    // Fail open when rate-limit storage is unavailable (e.g. Neon cold start).
+    return { ok: true };
+  }
 }
 
 export async function checkActionRateLimit(

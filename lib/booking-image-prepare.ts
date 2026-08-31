@@ -1,8 +1,11 @@
-import sharp from "sharp";
-
 export const BOOKING_IMAGE_MAX_LONG_EDGE = 1600;
 export const BOOKING_IMAGE_JPEG_QUALITY = 82;
 export const BOOKING_IMAGE_WEBP_QUALITY = 82;
+
+async function loadSharp() {
+  const mod = await import("sharp");
+  return mod.default;
+}
 
 /** Resize and compress booking issue photos before Cloudinary upload. */
 export async function prepareBookingIssueImageBuffer(
@@ -14,6 +17,7 @@ export async function prepareBookingIssueImageBuffer(
   }
 
   try {
+    const sharp = await loadSharp();
     let pipeline = sharp(buffer, { failOn: "none" }).rotate();
     const meta = await pipeline.metadata();
     const longEdge = Math.max(meta.width ?? 0, meta.height ?? 0);
@@ -37,6 +41,7 @@ export async function prepareBookingIssueImageBuffer(
       .jpeg({ quality: BOOKING_IMAGE_JPEG_QUALITY, mozjpeg: true })
       .toBuffer();
   } catch {
-    throw new Error("Foto tidak dapat diproses. Coba file JPG atau PNG lain.");
+    // Client-side compression already ran; upload original bytes if sharp is unavailable.
+    return buffer;
   }
 }

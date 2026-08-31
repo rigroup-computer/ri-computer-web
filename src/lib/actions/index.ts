@@ -39,4 +39,7 @@ export {
 
 export type { AddressSuggestion } from "@/src/lib/sdk/geo";
 
-export { uploadBookingIssueImage } from "@/src/lib/actions/booking-issue-upload";
+export {
+  uploadBookingIssueImage,
+  type UploadBookingIssueImageResult,
+} from "@/src/lib/actions/booking-issue-upload";

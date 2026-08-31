@@ -16,6 +16,7 @@ import {
   consumeActionRateLimit,
   RATE_LIMIT_SCOPES,
 } from "@/lib/server-rate-limit";
+import { serverActionFailureMessage } from "@/lib/error-display";
 import { generatePublicTrackingId } from "@/lib/tracking-id";
 import {
   normalizePhoneForLookup,
@@ -111,38 +112,39 @@ export async function createServiceOrder(
   }
 
   let trackingId = "";
-  for (let attempt = 0; attempt < 16; attempt++) {
-    trackingId = generatePublicTrackingId();
-    const taken = await orderSdk.isTrackingIdTaken(trackingId);
-    if (!taken) {
-      break;
-    }
-    if (attempt === 15) {
-      return {
-        ok: false,
-        error: "Sistem sibuk membuat nomor lacak. Mohon coba lagi.",
-      };
-    }
-  }
-
-  const visitAddress =
-    serviceType === "DELIVERY"
-      ? (parsed.data as z.infer<typeof deliverySchema>).visitAddress
-      : (parsed.data as z.infer<typeof regularSchema>).customerCity;
-
-  const preferredVisitAt = combineVisitDateTime(
-    parsed.data.preferredVisitDate,
-    parsed.data.preferredVisitTime,
-  );
-
-  if (!preferredVisitAt) {
-    return {
-      ok: false,
-      error: "Jadwal kunjungan tidak valid. Mohon pilih tanggal dan jam ulang.",
-    };
-  }
 
   try {
+    for (let attempt = 0; attempt < 16; attempt++) {
+      trackingId = generatePublicTrackingId();
+      const taken = await orderSdk.isTrackingIdTaken(trackingId);
+      if (!taken) {
+        break;
+      }
+      if (attempt === 15) {
+        return {
+          ok: false,
+          error: "Sistem sibuk membuat nomor lacak. Mohon coba lagi.",
+        };
+      }
+    }
+
+    const visitAddress =
+      serviceType === "DELIVERY"
+        ? (parsed.data as z.infer<typeof deliverySchema>).visitAddress
+        : (parsed.data as z.infer<typeof regularSchema>).customerCity;
+
+    const preferredVisitAt = combineVisitDateTime(
+      parsed.data.preferredVisitDate,
+      parsed.data.preferredVisitTime,
+    );
+
+    if (!preferredVisitAt) {
+      return {
+        ok: false,
+        error: "Jadwal kunjungan tidak valid. Mohon pilih tanggal dan jam ulang.",
+      };
+    }
+
     const order = await orderSdk.create({
       trackingId,
       status: "RECEIVED",
@@ -185,10 +187,13 @@ export async function createServiceOrder(
       preferredVisitAt: preferredVisitAt.toISOString(),
       visitScheduleStatus: "REQUESTED",
     };
-  } catch {
+  } catch (err) {
     return {
       ok: false,
-      error: "Gagal menyimpan booking. Mohon coba lagi.",
+      error: serverActionFailureMessage(
+        err,
+        "Gagal menyimpan booking. Mohon coba lagi.",
+      ),
     };
   }
 }
