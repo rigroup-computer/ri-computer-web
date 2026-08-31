@@ -142,18 +142,20 @@ export function BookingForm({
     fd.set("existingCount", String(existingCount));
     setUploadingIssueImage(true);
     try {
-      const { url } = await uploadBookingIssueImage(fd);
+      const outcome = await uploadBookingIssueImage(fd);
+      if (!outcome.ok) {
+        toast.error(outcome.error);
+        return;
+      }
       setIssueImageUrls((prev) => {
         if (prev.length >= MAX_ISSUE_ATTACHMENTS) {
           return prev;
         }
-        return [...prev, url];
+        return [...prev, outcome.url];
       });
       toast.success("Foto ditambahkan.");
-    } catch (err) {
-      toast.error(
-        err instanceof Error ? err.message : "Gagal mengunggah foto.",
-      );
+    } catch {
+      toast.error("Gagal mengunggah foto.");
     } finally {
       setUploadingIssueImage(false);
     }

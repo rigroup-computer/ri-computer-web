@@ -9,94 +9,69 @@ import {
   assertBookingUploadFile,
 } from "@/lib/booking-issue-attachments";
 import { prepareBookingIssueImageBuffer } from "@/lib/booking-image-prepare";
-import { looksLikeDatabaseUnreachable } from "@/lib/error-display";
-import { SdkError } from "@/src/lib/sdk/base";
+import { serverActionFailureMessage } from "@/lib/error-display";
 import { marketplaceSdk } from "@/src/lib/sdk/marketplace";
 
-function actionFailureMessage(err: unknown): string {
-  if (err instanceof SdkError) {
-    const causeMessage =
-      err.cause instanceof Error
-        ? err.cause.message
-        : typeof err.cause === "object" &&
-            err.cause !== null &&
-            "message" in err.cause &&
-            typeof err.cause.message === "string"
-          ? err.cause.message
-          : "";
-
-    if (looksLikeDatabaseUnreachable(causeMessage)) {
-      return "Database sementara tidak tersedia. Tunggu beberapa detik lalu coba lagi.";
-    }
-
-    if (
-      err.cause &&
-      typeof err.cause === "object" &&
-      "name" in err.cause &&
-      err.cause.name === "TimeoutError"
-    ) {
-      return "Unggah foto timeout. Periksa koneksi internet lalu coba lagi.";
-    }
-
-    if (err.code === "ENV_MISSING") {
-      return err.message;
-    }
-  }
-
-  if (err instanceof Error) {
-    if (looksLikeDatabaseUnreachable(err.message)) {
-      return "Database sementara tidak tersedia. Tunggu beberapa detik lalu coba lagi.";
-    }
-    return err.message;
-  }
-
-  return "Gagal mengunggah foto.";
-}
+export type UploadBookingIssueImageResult =
+  | Readonly<{ ok: true; url: string }>
+  | Readonly<{ ok: false; error: string }>;
 
 export async function uploadBookingIssueImage(
   formData: FormData,
-): Promise<{ url: string }> {
-  let limited;
+): Promise<UploadBookingIssueImageResult> {
   try {
-    limited = await consumeActionRateLimit(
-      RATE_LIMIT_SCOPES.uploadBookingIssueImage,
-    );
-  } catch (err) {
-    throw new Error(actionFailureMessage(err));
-  }
-  if (!limited.ok) {
-    throw new Error(limited.error);
-  }
+    let limited;
+    try {
+      limited = await consumeActionRateLimit(
+        RATE_LIMIT_SCOPES.uploadBookingIssueImage,
+      );
+    } catch (err) {
+      return {
+        ok: false,
+        error: serverActionFailureMessage(
+          err,
+          "Gagal memproses unggahan foto.",
+        ),
+      };
+    }
+    if (!limited.ok) {
+      return { ok: false, error: limited.error };
+    }
 
-  const existingCountRaw = formData.get("existingCount");
-  const existingCount =
-    typeof existingCountRaw === "string"
-      ? Number.parseInt(existingCountRaw, 10)
-      : 0;
+    const existingCountRaw = formData.get("existingCount");
+    const existingCount =
+      typeof existingCountRaw === "string"
+        ? Number.parseInt(existingCountRaw, 10)
+        : 0;
 
-  if (
-    Number.isNaN(existingCount) ||
-    existingCount < 0 ||
-    existingCount >= MAX_ISSUE_ATTACHMENTS
-  ) {
-    throw new Error(`Maksimal ${MAX_ISSUE_ATTACHMENTS} foto per booking.`);
-  }
+    if (
+      Number.isNaN(existingCount) ||
+      existingCount < 0 ||
+      existingCount >= MAX_ISSUE_ATTACHMENTS
+    ) {
+      return {
+        ok: false,
+        error: `Maksimal ${MAX_ISSUE_ATTACHMENTS} foto per booking.`,
+      };
+    }
 
-  const file = formData.get("file");
+    const file = formData.get("file");
 
-  if (!(file instanceof File)) {
-    throw new Error("Tidak ada berkas foto.");
-  }
+    if (!(file instanceof File)) {
+      return { ok: false, error: "Tidak ada berkas foto." };
+    }
 
-  assertBookingUploadFile(file);
+    assertBookingUploadFile(file);
 
-  const rawBuffer = Buffer.from(await file.arrayBuffer());
-  const buffer = await prepareBookingIssueImageBuffer(rawBuffer, file.type);
+    const rawBuffer = Buffer.from(await file.arrayBuffer());
+    const buffer = await prepareBookingIssueImageBuffer(rawBuffer, file.type);
 
-  try {
     const deliveryUrl = await marketplaceSdk.uploadBookingIssueImage(buffer);
-    return { url: deliveryUrl };
+    return { ok: true, url: deliveryUrl };
   } catch (err) {
-    throw new Error(actionFailureMessage(err));
+    return {
+      ok: false,
+      error: serverActionFailureMessage(err, "Gagal mengunggah foto."),
+    };
   }
 }
