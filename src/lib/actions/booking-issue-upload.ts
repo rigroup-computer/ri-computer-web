@@ -9,7 +9,7 @@ import {
   assertBookingUploadFile,
 } from "@/lib/booking-issue-attachments";
 import { prepareBookingIssueImageBuffer } from "@/lib/booking-image-prepare";
-import { serverActionFailureMessage } from "@/lib/error-display";
+import { serverActionFailureMessage } from "@/lib/server-action-error";
 import { marketplaceSdk } from "@/src/lib/sdk/marketplace";
 
 export type UploadBookingIssueImageResult =

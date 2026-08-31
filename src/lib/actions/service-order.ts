@@ -16,7 +16,7 @@ import {
   consumeActionRateLimit,
   RATE_LIMIT_SCOPES,
 } from "@/lib/server-rate-limit";
-import { serverActionFailureMessage } from "@/lib/error-display";
+import { serverActionFailureMessage } from "@/lib/server-action-error";
 import { generatePublicTrackingId } from "@/lib/tracking-id";
 import {
   normalizePhoneForLookup,
