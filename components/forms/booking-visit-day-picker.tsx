@@ -69,7 +69,7 @@ export function BookingVisitDayPicker({
         nav: "flex items-center gap-1",
         button_previous: `${NAV_BUTTON_CLASS} left-4`,
         button_next: `${NAV_BUTTON_CLASS} right-4`,
-        weekdays: "flex",
+        weekdays: "flex justify-between lg:pt-4",
         weekday:
           "w-9 text-[11px] font-semibold uppercase tracking-wide text-slate-500",
         week: "mt-1 flex w-full",
