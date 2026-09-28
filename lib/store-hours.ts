@@ -151,7 +151,7 @@ export function getOpenDaysInRange(from: Date, to: Date): Date[] {
 
 function slotHoursForWeekday(weekday: number): readonly number[] {
   if (weekday === 6) {
-    return [10, 11, 12, 13, 14, 15, 16];
+    return [10, 11, 12, 13, 14];
   }
   if (weekday >= 1 && weekday <= 4) {
     return [10, 11, 12, 13, 14, 15];
