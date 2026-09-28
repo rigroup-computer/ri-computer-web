@@ -22,13 +22,14 @@ describe("store-hours (Jaya Plaza)", () => {
     expect(getWeekdayForIsoDate("2026-04-24")).toBe(5);
   });
 
-  it("includes Saturday slot through 16:00", () => {
+  it("limits Saturday slots to 14:00 (excludes 15:00 and 16:00)", () => {
     const slots = getAvailableTimeSlots(
       "2026-04-25",
       new Date("2026-04-24T17:00:00.000Z"),
     );
-    expect(slots).toContain("16:00");
-    expect(slots.at(-1)).toBe("16:00");
+    expect(slots).not.toContain("15:00");
+    expect(slots).not.toContain("16:00");
+    expect(slots.at(-1)).toBe("14:00");
   });
 
   it("limits Monday slots to 15:00 before close at 16:00", () => {
