@@ -136,6 +136,7 @@ export async function createServiceOrder(
     const preferredVisitAt = combineVisitDateTime(
       parsed.data.preferredVisitDate,
       parsed.data.preferredVisitTime,
+      serviceType,
     );
 
     if (!preferredVisitAt) {
