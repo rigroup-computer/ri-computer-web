@@ -108,8 +108,11 @@ export function OrderVisitScheduleSection({
   const canCancelOrder = order.status === ServiceStatus.RECEIVED;
 
   const timeSlots = useMemo(
-    () => (visitDate ? getAdminTimeSlotsForDate(visitDate) : []),
-    [visitDate],
+    () =>
+      visitDate
+        ? getAdminTimeSlotsForDate(visitDate, order.serviceType)
+        : [],
+    [order.serviceType, visitDate],
   );
 
   const scheduleResolved =

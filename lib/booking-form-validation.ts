@@ -44,72 +44,84 @@ export const contactBaseSchema = z.object({
     .refine((value) => value.length > 0, { message: "empty" }),
 });
 
-export const scheduleFieldsSchema = z
-  .object({
-    preferredVisitDate: z.string().trim().min(1),
-    preferredVisitTime: z.string().trim().min(1),
-  })
-  .superRefine((value, ctx) => {
-    if (!/^\d{4}-\d{2}-\d{2}$/.test(value.preferredVisitDate)) {
-      ctx.addIssue({
-        code: "custom",
-        message: "invalid_date",
-        path: ["preferredVisitDate"],
-      });
-      return;
-    }
-    if (value.preferredVisitDate < formatIsoDateToday()) {
-      ctx.addIssue({
-        code: "custom",
-        message: "past_date",
-        path: ["preferredVisitDate"],
-      });
-    }
-    if (!isStoreOpenOnIsoDate(value.preferredVisitDate)) {
-      ctx.addIssue({
-        code: "custom",
-        message: "closed_day",
-        path: ["preferredVisitDate"],
-      });
-    }
-    if (!/^\d{1,2}:\d{2}$/.test(value.preferredVisitTime)) {
-      ctx.addIssue({
-        code: "custom",
-        message: "invalid_time",
-        path: ["preferredVisitTime"],
-      });
-    }
-    if (
-      !isValidVisitTimeSlot(value.preferredVisitDate, value.preferredVisitTime)
-    ) {
-      ctx.addIssue({
-        code: "custom",
-        message: "unavailable_slot",
-        path: ["preferredVisitTime"],
-      });
-    }
-    if (
-      combineVisitDateTime(value.preferredVisitDate, value.preferredVisitTime) ===
-      null
-    ) {
-      ctx.addIssue({
-        code: "custom",
-        message: "invalid_schedule",
-        path: ["preferredVisitDate"],
-      });
-    }
-  });
+function createScheduleFieldsSchema(serviceType: BookableServiceType) {
+  return z
+    .object({
+      preferredVisitDate: z.string().trim().min(1),
+      preferredVisitTime: z.string().trim().min(1),
+    })
+    .superRefine((value, ctx) => {
+      if (!/^\d{4}-\d{2}-\d{2}$/.test(value.preferredVisitDate)) {
+        ctx.addIssue({
+          code: "custom",
+          message: "invalid_date",
+          path: ["preferredVisitDate"],
+        });
+        return;
+      }
+      if (value.preferredVisitDate < formatIsoDateToday()) {
+        ctx.addIssue({
+          code: "custom",
+          message: "past_date",
+          path: ["preferredVisitDate"],
+        });
+      }
+      if (!isStoreOpenOnIsoDate(value.preferredVisitDate)) {
+        ctx.addIssue({
+          code: "custom",
+          message: "closed_day",
+          path: ["preferredVisitDate"],
+        });
+      }
+      if (!/^\d{1,2}:\d{2}$/.test(value.preferredVisitTime)) {
+        ctx.addIssue({
+          code: "custom",
+          message: "invalid_time",
+          path: ["preferredVisitTime"],
+        });
+      }
+      if (
+        !isValidVisitTimeSlot(
+          value.preferredVisitDate,
+          value.preferredVisitTime,
+          new Date(),
+          serviceType,
+        )
+      ) {
+        ctx.addIssue({
+          code: "custom",
+          message: "unavailable_slot",
+          path: ["preferredVisitTime"],
+        });
+      }
+      if (
+        combineVisitDateTime(
+          value.preferredVisitDate,
+          value.preferredVisitTime,
+          serviceType,
+        ) === null
+      ) {
+        ctx.addIssue({
+          code: "custom",
+          message: "invalid_schedule",
+          path: ["preferredVisitDate"],
+        });
+      }
+    });
+}
+
+export const scheduleFieldsSchema = createScheduleFieldsSchema("REGULAR");
 
 export const deliverySchema = deviceFieldsSchema
   .merge(contactBaseSchema)
-  .merge(scheduleFieldsSchema)
+  .merge(createScheduleFieldsSchema("DELIVERY"))
   .extend({
     visitAddress: z.string().trim().min(5).max(500),
   });
 
 export const regularSchema = deviceFieldsSchema
   .merge(contactBaseSchema)
-  .merge(scheduleFieldsSchema)
+  .merge(createScheduleFieldsSchema("REGULAR"))
   .extend({
     customerCity: z.string().trim().min(2).max(100),
   });

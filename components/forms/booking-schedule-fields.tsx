@@ -17,6 +17,7 @@ import {
   inputClass,
   labelClass,
 } from "@/components/forms/booking-form-shared";
+import type { BookableServiceType } from "@/lib/booking-form-validation";
 import {
   formatVisitDateId,
   getAvailableTimeSlots,
@@ -44,6 +45,7 @@ function useIsDesktopCalendar(): boolean {
 }
 
 export type BookingScheduleFieldsProps = Readonly<{
+  serviceType: BookableServiceType;
   preferredVisitDate: string;
   preferredVisitTime: string;
   onPreferredVisitDateChange: (isoDate: string) => void;
@@ -53,6 +55,7 @@ export type BookingScheduleFieldsProps = Readonly<{
 }>;
 
 export function BookingScheduleFields({
+  serviceType,
   preferredVisitDate,
   preferredVisitTime,
   onPreferredVisitDateChange,
@@ -65,8 +68,11 @@ export function BookingScheduleFields({
   const popoverRef = useRef<HTMLDivElement>(null);
 
   const timeSlots = useMemo(
-    () => (preferredVisitDate ? getAvailableTimeSlots(preferredVisitDate) : []),
-    [preferredVisitDate],
+    () =>
+      preferredVisitDate
+        ? getAvailableTimeSlots(preferredVisitDate, new Date(), serviceType)
+        : [],
+    [preferredVisitDate, serviceType],
   );
 
   const formattedDate = preferredVisitDate

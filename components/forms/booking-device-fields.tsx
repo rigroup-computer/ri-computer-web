@@ -12,6 +12,7 @@ import { createPortal } from "react-dom";
 import Image from "next/image";
 import { Icon } from "@iconify/react";
 import { MAX_ISSUE_ATTACHMENTS } from "@/lib/booking-issue-attachments";
+import type { BookableServiceType } from "@/lib/booking-form-validation";
 import {
   BRAND_SUGGESTIONS,
   FIELD_LIMITS,
@@ -91,6 +92,7 @@ function IssueImageLightbox({
 }
 
 export type BookingDeviceFieldsProps = Readonly<{
+  serviceType: BookableServiceType;
   preferredVisitDate: string;
   preferredVisitTime: string;
   onPreferredVisitDateChange: (isoDate: string) => void;
@@ -107,6 +109,7 @@ export type BookingDeviceFieldsProps = Readonly<{
 }>;
 
 export function BookingDeviceFields({
+  serviceType,
   preferredVisitDate,
   preferredVisitTime,
   onPreferredVisitDateChange,
@@ -187,6 +190,7 @@ export function BookingDeviceFields({
 
         <div className="lg:col-span-3 space-y-5">
           <BookingScheduleFields
+            serviceType={serviceType}
             preferredVisitDate={preferredVisitDate}
             preferredVisitTime={preferredVisitTime}
             onPreferredVisitDateChange={onPreferredVisitDateChange}

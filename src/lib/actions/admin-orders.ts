@@ -110,6 +110,7 @@ export async function confirmServiceVisitSchedule(
   const confirmedVisitAt = combineAdminVisitDateTime(
     parsed.data.confirmedVisitDate ?? "",
     parsed.data.confirmedVisitTime ?? "",
+    order.serviceType,
   );
 
   if (!confirmedVisitAt) {

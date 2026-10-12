@@ -280,6 +280,7 @@ export function BookingForm({
           <input type="hidden" name="serviceType" value={serviceType ?? ""} />
 
           <BookingDeviceFields
+            serviceType={serviceType}
             preferredVisitDate={preferredVisitDate}
             preferredVisitTime={preferredVisitTime}
             onPreferredVisitDateChange={setPreferredVisitDate}
