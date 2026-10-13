@@ -149,7 +149,18 @@ export function getOpenDaysInRange(from: Date, to: Date): Date[] {
   return results;
 }
 
-function slotHoursForWeekday(weekday: number): readonly number[] {
+/** Service types that may affect visit slot hours (DELIVERY Tue–Thu = 09:00 only). */
+export type VisitSlotServiceType = "REGULAR" | "DELIVERY" | "HOME_SERVICE";
+
+function slotHoursForWeekday(
+  weekday: number,
+  serviceType?: VisitSlotServiceType,
+): readonly number[] {
+  // Antar jemput: Selasa–Kamis only offers 09:00.
+  if (serviceType === "DELIVERY" && weekday >= 2 && weekday <= 4) {
+    return [9];
+  }
+
   if (weekday === 6) {
     return [10, 11, 12, 13, 14];
   }
@@ -160,7 +171,7 @@ function slotHoursForWeekday(weekday: number): readonly number[] {
 }
 
 function formatSlotHour(hour: number): string {
-  return `${hour}:00`;
+  return `${String(hour).padStart(2, "0")}:00`;
 }
 
 function parseTimeSlot(time: string): number | null {
@@ -179,17 +190,19 @@ function parseTimeSlot(time: string): number | null {
 /**
  * Hourly visit slots for a calendar day (Jaya Plaza).
  * Today: only slots strictly after `now` (Jakarta) and before close.
+ * DELIVERY on Selasa–Kamis: only 09:00.
  */
 export function getAvailableTimeSlots(
   isoDate: string,
   now: Date = new Date(),
+  serviceType?: VisitSlotServiceType,
 ): string[] {
   const weekday = getWeekdayForIsoDate(isoDate);
   if (weekday === null || !OPEN_WEEKDAYS.has(weekday)) {
     return [];
   }
 
-  const allSlots = slotHoursForWeekday(weekday).map(formatSlotHour);
+  const allSlots = slotHoursForWeekday(weekday, serviceType).map(formatSlotHour);
   const todayIso = formatIsoDateToday(now);
 
   if (isoDate !== todayIso) {
@@ -208,20 +221,29 @@ export function getAvailableTimeSlots(
   });
 }
 
-export function isValidVisitTimeSlot(isoDate: string, time: string, now: Date = new Date()): boolean {
-  const slots = getAvailableTimeSlots(isoDate, now);
+export function isValidVisitTimeSlot(
+  isoDate: string,
+  time: string,
+  now: Date = new Date(),
+  serviceType?: VisitSlotServiceType,
+): boolean {
+  const slots = getAvailableTimeSlots(isoDate, now, serviceType);
   return slots.includes(time);
 }
 
 /** Build UTC `Date` for a Jakarta-local visit datetime (WIB = UTC+7, no DST). */
-export function combineVisitDateTime(isoDate: string, timeHHmm: string): Date | null {
+export function combineVisitDateTime(
+  isoDate: string,
+  timeHHmm: string,
+  serviceType?: VisitSlotServiceType,
+): Date | null {
   const parsedDate = parseIsoDateOnly(isoDate);
   const hour = parseTimeSlot(timeHHmm);
   if (!parsedDate || hour === null || !isStoreOpenOnIsoDate(isoDate)) {
     return null;
   }
 
-  if (!isValidVisitTimeSlot(isoDate, timeHHmm)) {
+  if (!isValidVisitTimeSlot(isoDate, timeHHmm, new Date(), serviceType)) {
     return null;
   }
 
@@ -231,7 +253,11 @@ export function combineVisitDateTime(isoDate: string, timeHHmm: string): Date | 
 }
 
 /** Admin confirmation — validates open day and hourly slot range, not "today" cutoff. */
-export function combineAdminVisitDateTime(isoDate: string, timeHHmm: string): Date | null {
+export function combineAdminVisitDateTime(
+  isoDate: string,
+  timeHHmm: string,
+  serviceType?: VisitSlotServiceType,
+): Date | null {
   const parsedDate = parseIsoDateOnly(isoDate);
   const hour = parseTimeSlot(timeHHmm);
   if (!parsedDate || hour === null || !isStoreOpenOnIsoDate(isoDate)) {
@@ -243,7 +269,7 @@ export function combineAdminVisitDateTime(isoDate: string, timeHHmm: string): Da
     return null;
   }
 
-  const allowedHours = slotHoursForWeekday(weekday);
+  const allowedHours = slotHoursForWeekday(weekday, serviceType);
   if (!allowedHours.includes(hour)) {
     return null;
   }
@@ -253,12 +279,15 @@ export function combineAdminVisitDateTime(isoDate: string, timeHHmm: string): Da
   );
 }
 
-export function getAdminTimeSlotsForDate(isoDate: string): string[] {
+export function getAdminTimeSlotsForDate(
+  isoDate: string,
+  serviceType?: VisitSlotServiceType,
+): string[] {
   const weekday = getWeekdayForIsoDate(isoDate);
   if (weekday === null || !OPEN_WEEKDAYS.has(weekday)) {
     return [];
   }
-  return slotHoursForWeekday(weekday).map(formatSlotHour);
+  return slotHoursForWeekday(weekday, serviceType).map(formatSlotHour);
 }
 
 export function formatVisitDateId(isoDate: string): string | null {
