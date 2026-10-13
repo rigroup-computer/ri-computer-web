@@ -55,25 +55,23 @@ describe("store-hours (Jaya Plaza)", () => {
     expect(combined?.toISOString()).toBe("2026-04-25T04:00:00.000Z");
   });
 
-  it("adds 09:00 for DELIVERY on Selasa–Kamis", () => {
+  it("offers only 09:00 for DELIVERY on Selasa–Kamis", () => {
     const now = new Date("2026-04-19T17:00:00.000Z");
     // 2026-04-21 = Tuesday, 22 = Wed, 23 = Thu
     for (const iso of ["2026-04-21", "2026-04-22", "2026-04-23"] as const) {
       const slots = getAvailableTimeSlots(iso, now, "DELIVERY");
-      expect(slots[0]).toBe("09:00");
-      expect(slots).toContain("10:00");
-      expect(slots).toContain("15:00");
+      expect(slots).toEqual(["09:00"]);
     }
   });
 
-  it("does not add 09:00 for DELIVERY on Senin or Sabtu", () => {
+  it("does not offer 09:00 for DELIVERY on Senin or Sabtu", () => {
     const now = new Date("2026-04-19T17:00:00.000Z");
-    expect(getAvailableTimeSlots("2026-04-20", now, "DELIVERY")).not.toContain(
-      "09:00",
-    );
-    expect(getAvailableTimeSlots("2026-04-25", now, "DELIVERY")).not.toContain(
-      "09:00",
-    );
+    const monday = getAvailableTimeSlots("2026-04-20", now, "DELIVERY");
+    const saturday = getAvailableTimeSlots("2026-04-25", now, "DELIVERY");
+    expect(monday).not.toContain("09:00");
+    expect(monday[0]).toBe("10:00");
+    expect(saturday).not.toContain("09:00");
+    expect(saturday[0]).toBe("10:00");
   });
 
   it("keeps REGULAR Tuesday slots starting at 10:00", () => {
@@ -84,6 +82,10 @@ describe("store-hours (Jaya Plaza)", () => {
     );
     expect(slots).not.toContain("09:00");
     expect(slots[0]).toBe("10:00");
+  });
+
+  it("rejects DELIVERY 10:00 on Tuesday (only 09:00)", () => {
+    expect(combineVisitDateTime("2026-04-21", "10:00", "DELIVERY")).toBeNull();
   });
 
   it("combines DELIVERY 09:00 on Tuesday into UTC datetime", () => {
