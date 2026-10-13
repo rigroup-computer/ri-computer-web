@@ -149,28 +149,25 @@ export function getOpenDaysInRange(from: Date, to: Date): Date[] {
   return results;
 }
 
-/** Service types that may affect visit slot hours (only DELIVERY adds 09:00). */
+/** Service types that may affect visit slot hours (DELIVERY Tue–Thu = 09:00 only). */
 export type VisitSlotServiceType = "REGULAR" | "DELIVERY" | "HOME_SERVICE";
 
 function slotHoursForWeekday(
   weekday: number,
   serviceType?: VisitSlotServiceType,
 ): readonly number[] {
-  let base: readonly number[];
-  if (weekday === 6) {
-    base = [10, 11, 12, 13, 14];
-  } else if (weekday >= 1 && weekday <= 4) {
-    base = [10, 11, 12, 13, 14, 15];
-  } else {
-    return [];
-  }
-
-  // Antar jemput: early 09:00 pickup only on Selasa–Kamis.
+  // Antar jemput: Selasa–Kamis only offers 09:00.
   if (serviceType === "DELIVERY" && weekday >= 2 && weekday <= 4) {
-    return [9, ...base];
+    return [9];
   }
 
-  return base;
+  if (weekday === 6) {
+    return [10, 11, 12, 13, 14];
+  }
+  if (weekday >= 1 && weekday <= 4) {
+    return [10, 11, 12, 13, 14, 15];
+  }
+  return [];
 }
 
 function formatSlotHour(hour: number): string {
@@ -193,7 +190,7 @@ function parseTimeSlot(time: string): number | null {
 /**
  * Hourly visit slots for a calendar day (Jaya Plaza).
  * Today: only slots strictly after `now` (Jakarta) and before close.
- * DELIVERY adds 09:00 on Selasa–Kamis.
+ * DELIVERY on Selasa–Kamis: only 09:00.
  */
 export function getAvailableTimeSlots(
   isoDate: string,
