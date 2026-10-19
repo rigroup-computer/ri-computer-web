@@ -9,7 +9,9 @@ import {
   getBookingCalendarEndMonth,
   isoDateToDate,
   isStoreOpenOnDate,
+  type VisitSlotServiceType,
 } from "@/lib/store-hours";
+import { useScheduleConfig } from "@/components/schedule/schedule-config-provider";
 import "./booking-date.style.css";
 
 const NAV_BUTTON_CLASS =
@@ -18,14 +20,17 @@ const NAV_BUTTON_CLASS =
 export type BookingVisitDayPickerProps = Readonly<{
   selectedIsoDate: string;
   onSelectIsoDate: (isoDate: string) => void;
+  serviceType?: VisitSlotServiceType;
   className?: string;
 }>;
 
 export function BookingVisitDayPicker({
   selectedIsoDate,
   onSelectIsoDate,
+  serviceType,
   className = "",
 }: BookingVisitDayPickerProps) {
+  const scheduleConfig = useScheduleConfig();
   const todayIso = formatIsoDateToday();
   const todayDate = useMemo(() => isoDateToDate(todayIso), [todayIso]);
   const selectedDate = useMemo(
@@ -35,11 +40,13 @@ export function BookingVisitDayPicker({
   const endMonth = useMemo(() => getBookingCalendarEndMonth(), []);
 
   const disabled = useMemo<Matcher[]>(() => {
+    const isClosed = (date: Date) =>
+      !isStoreOpenOnDate(scheduleConfig, date, serviceType);
     if (!todayDate) {
-      return [(date: Date) => !isStoreOpenOnDate(date)];
+      return [isClosed];
     }
-    return [{ before: todayDate }, (date: Date) => !isStoreOpenOnDate(date)];
-  }, [todayDate]);
+    return [{ before: todayDate }, isClosed];
+  }, [todayDate, scheduleConfig, serviceType]);
 
   return (
     <DayPicker

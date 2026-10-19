@@ -10,7 +10,14 @@ import {
 import { Icon } from "@iconify/react";
 import { BookingVisitDayPicker } from "@/components/forms/booking-visit-day-picker";
 import { BottomSheet } from "@/components/ui/bottom-sheet";
-import { formatVisitDateId, isStoreOpenOnIsoDate } from "@/lib/store-hours";
+import {
+  describeWeeklyOpenDays,
+  formatVisitDateId,
+  isStoreOpenOnIsoDate,
+  toScheduleServiceType,
+  type VisitSlotServiceType,
+} from "@/lib/store-hours";
+import { useScheduleConfig } from "@/components/schedule/schedule-config-provider";
 import "@/components/forms/booking-date.style.css";
 
 function useIsDesktopCalendar(): boolean {
@@ -27,29 +34,36 @@ function useIsDesktopCalendar(): boolean {
 
 type AdminVisitDateFieldProps = Readonly<{
   visitDate: string;
+  serviceType: VisitSlotServiceType;
   disabled?: boolean;
   onDateChange: (isoDate: string) => void;
 }>;
 
 export function AdminVisitDateField({
   visitDate,
+  serviceType,
   disabled = false,
   onDateChange,
 }: AdminVisitDateFieldProps) {
   const isDesktop = useIsDesktopCalendar();
+  const scheduleConfig = useScheduleConfig();
+  const openDaysHint = describeWeeklyOpenDays(
+    scheduleConfig,
+    toScheduleServiceType(serviceType),
+  );
   const [calendarOpen, setCalendarOpen] = useState(false);
   const popoverRef = useRef<HTMLDivElement>(null);
   const formattedDate = visitDate ? formatVisitDateId(visitDate) : null;
 
   const handleDateSelect = useCallback(
     (isoDate: string) => {
-      if (!isoDate || !isStoreOpenOnIsoDate(isoDate)) {
+      if (!isoDate || !isStoreOpenOnIsoDate(scheduleConfig, isoDate, serviceType)) {
         return;
       }
       onDateChange(isoDate);
       setCalendarOpen(false);
     },
-    [onDateChange],
+    [onDateChange, scheduleConfig, serviceType],
   );
 
   useEffect(() => {
@@ -97,10 +111,9 @@ export function AdminVisitDateField({
             <BookingVisitDayPicker
               selectedIsoDate={visitDate}
               onSelectIsoDate={handleDateSelect}
+              serviceType={serviceType}
             />
-            <p className="mt-2 text-[11px] text-[#565d6d]">
-              Hanya Senin–Kamis &amp; Sabtu (Jaya Plaza). Jumat &amp; Minggu tutup.
-            </p>
+            <p className="mt-2 text-[11px] text-[#565d6d]">{openDaysHint}</p>
           </div>
         ) : null}
       </div>
@@ -117,10 +130,9 @@ export function AdminVisitDateField({
             <BookingVisitDayPicker
               selectedIsoDate={visitDate}
               onSelectIsoDate={handleDateSelect}
+              serviceType={serviceType}
             />
-            <p className="px-2 pb-2 text-[11px] text-[#565d6d]">
-              Hanya Senin–Kamis &amp; Sabtu (Jaya Plaza). Jumat &amp; Minggu tutup.
-            </p>
+            <p className="px-2 pb-2 text-[11px] text-[#565d6d]">{openDaysHint}</p>
           </>
         ) : null}
       </BottomSheet>

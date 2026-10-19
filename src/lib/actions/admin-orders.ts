@@ -21,6 +21,7 @@ import {
 } from "@/lib/store-hours";
 import { authSdk } from "@/src/lib/sdk/auth";
 import { orderSdk } from "@/src/lib/sdk/orders";
+import { scheduleSdk } from "@/src/lib/sdk/schedule";
 
 const statusEnum = z.nativeEnum(ServiceStatus);
 
@@ -108,6 +109,7 @@ export async function confirmServiceVisitSchedule(
   }
 
   const confirmedVisitAt = combineAdminVisitDateTime(
+    await scheduleSdk.getConfig(),
     parsed.data.confirmedVisitDate ?? "",
     parsed.data.confirmedVisitTime ?? "",
     order.serviceType,

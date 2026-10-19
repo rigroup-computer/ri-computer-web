@@ -12,7 +12,9 @@ import {
 } from "@/lib/admin-order-status-display";
 import { normalizeStoredIssueAttachmentUrls } from "@/lib/booking-issue-attachments";
 import { parseStoredCostLineItems } from "@/lib/service-order-cost-items";
+import { ScheduleConfigProvider } from "@/components/schedule/schedule-config-provider";
 import { orderSdk } from "@/src/lib/sdk/orders";
+import { scheduleSdk } from "@/src/lib/sdk/schedule";
 
 export const dynamic = "force-dynamic";
 
@@ -85,20 +87,25 @@ export default async function AdminOrdersPage({
       ? { AND: [tabStatusWhere, { serviceType: { in: serviceTypes } }] }
       : tabStatusWhere;
 
-  const orders = await orderSdk.searchAdminOrders(where);
+  const [orders, scheduleConfig] = await Promise.all([
+    orderSdk.searchAdminOrders(where),
+    scheduleSdk.getConfig(),
+  ]);
   const emptyMessage = EMPTY_MESSAGES[activeTab] ?? EMPTY_MESSAGES.semua;
 
   return (
     <main className="space-y-3 lg:space-y-5">
       <OrdersPageHeader selectedJenis={selectedJenis} />
 
-      <AdminOrdersClient
-        key={`${activeTab}-${selectedJenis.join(",")}`}
-        orders={serializeOrdersForClient(orders)}
-        emptyMessage={emptyMessage}
-        activeTab={activeTab}
-        selectedJenis={selectedJenis}
-      />
+      <ScheduleConfigProvider config={scheduleConfig}>
+        <AdminOrdersClient
+          key={`${activeTab}-${selectedJenis.join(",")}`}
+          orders={serializeOrdersForClient(orders)}
+          emptyMessage={emptyMessage}
+          activeTab={activeTab}
+          selectedJenis={selectedJenis}
+        />
+      </ScheduleConfigProvider>
     </main>
   );
 }
