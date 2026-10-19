@@ -1,6 +1,7 @@
 import Image from "next/image";
 import Link from "next/link";
-import { JAYA_PLAZA_HOURS_DISPLAY } from "@/lib/store-hours";
+import { buildHoursDisplayRows, type StoreHoursRow } from "@/lib/store-hours";
+import { scheduleSdk } from "@/src/lib/sdk/schedule";
 import { whatsappHref } from "@/lib/whatsapp";
 
 const JAYA_PLAZA_MAPS_URL = "https://maps.app.goo.gl/XYALKiAJd6ug2Xs6A";
@@ -12,10 +13,12 @@ Merk & type laptop:
 Keluhan:
 Pertanyaan:`;
 
-function StoreJayaPlazaComponent() {
+function StoreJayaPlazaComponent({
+  rows,
+}: Readonly<{ rows: readonly StoreHoursRow[] }>) {
   return (
     <>
-      {JAYA_PLAZA_HOURS_DISPLAY.map((row) => (
+      {rows.map((row) => (
         <span key={row.label} className="contents">
           <span className="text-[#5A5F68FF]">{row.label}</span>
           <span
@@ -129,7 +132,8 @@ function StoreInfoCard({
   );
 }
 
-export default function SectionInfoStoreComponent() {
+export default async function SectionInfoStoreComponent() {
+  const jayaPlazaRows = buildHoursDisplayRows(await scheduleSdk.getConfig());
   const shopWa = process.env.SHOP_WHATSAPP_NUMBER?.trim() ?? "";
   const dropOnlyWaHref = whatsappHref(shopWa, DROP_ONLY_CONSULTATION_MESSAGE);
 
@@ -151,7 +155,7 @@ export default function SectionInfoStoreComponent() {
         <StoreInfoCard
           title="Jaya Plaza"
           address="Jl A Yani No. 238, Kota Bandung"
-          detail={<StoreJayaPlazaComponent />}
+          detail={<StoreJayaPlazaComponent rows={jayaPlazaRows} />}
           ctaHref={JAYA_PLAZA_MAPS_URL}
         />
 

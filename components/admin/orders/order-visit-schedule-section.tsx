@@ -17,6 +17,7 @@ import {
 import { formatTrackingIdDisplay } from "@/lib/admin-order-status-display";
 import { whatsappHref } from "@/lib/whatsapp";
 import { AdminVisitDateField } from "@/components/admin/orders/admin-visit-date-field";
+import { useScheduleConfig } from "@/components/schedule/schedule-config-provider";
 import { ConfirmDialog } from "@/components/ui/confirm-dialog";
 import type { AdminSerializedOrder } from "./order-row-data";
 
@@ -95,6 +96,7 @@ export function OrderVisitScheduleSection({
   onAfterAction,
   onOrderDeleted,
 }: OrderVisitScheduleSectionProps) {
+  const scheduleConfig = useScheduleConfig();
   const scheduleAt = activeScheduleAt(order);
   const initialDate = isoDateFromPreferred(scheduleAt);
   const initialTime = timeFromPreferred(scheduleAt);
@@ -110,9 +112,9 @@ export function OrderVisitScheduleSection({
   const timeSlots = useMemo(
     () =>
       visitDate
-        ? getAdminTimeSlotsForDate(visitDate, order.serviceType)
+        ? getAdminTimeSlotsForDate(scheduleConfig, visitDate, order.serviceType)
         : [],
-    [order.serviceType, visitDate],
+    [order.serviceType, visitDate, scheduleConfig],
   );
 
   const scheduleResolved =
@@ -130,7 +132,7 @@ export function OrderVisitScheduleSection({
       return;
     }
 
-    if (action !== "decline" && !isStoreOpenOnIsoDate(visitDate)) {
+    if (action !== "decline" && !isStoreOpenOnIsoDate(scheduleConfig, visitDate, order.serviceType)) {
       toast.error("Toko tutup pada hari tersebut.");
       return;
     }
@@ -276,6 +278,7 @@ export function OrderVisitScheduleSection({
                 </p>
                 <AdminVisitDateField
                   visitDate={visitDate}
+                  serviceType={order.serviceType}
                   disabled={pending}
                   onDateChange={(isoDate) => {
                     setVisitDate(isoDate);

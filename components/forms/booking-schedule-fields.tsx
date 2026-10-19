@@ -19,10 +19,13 @@ import {
 } from "@/components/forms/booking-form-shared";
 import type { BookableServiceType } from "@/lib/booking-form-validation";
 import {
+  describeWeeklyOpenDays,
   formatVisitDateId,
   getAvailableTimeSlots,
   isStoreOpenOnIsoDate,
+  resolveDaySchedule,
 } from "@/lib/store-hours";
+import { useScheduleConfig } from "@/components/schedule/schedule-config-provider";
 
 const BookingVisitDayPicker = dynamic(
   () =>
@@ -64,16 +67,27 @@ export function BookingScheduleFields({
   onClearFieldError,
 }: BookingScheduleFieldsProps) {
   const isDesktop = useIsDesktopCalendar();
+  const scheduleConfig = useScheduleConfig();
   const [calendarOpen, setCalendarOpen] = useState(false);
   const popoverRef = useRef<HTMLDivElement>(null);
 
   const timeSlots = useMemo(
     () =>
       preferredVisitDate
-        ? getAvailableTimeSlots(preferredVisitDate, new Date(), serviceType)
+        ? getAvailableTimeSlots(
+            scheduleConfig,
+            preferredVisitDate,
+            new Date(),
+            serviceType,
+          )
         : [],
-    [preferredVisitDate, serviceType],
+    [preferredVisitDate, serviceType, scheduleConfig],
   );
+
+  const openDaysHint = describeWeeklyOpenDays(scheduleConfig, serviceType);
+  const selectedDayNote = preferredVisitDate
+    ? resolveDaySchedule(scheduleConfig, preferredVisitDate, serviceType)?.note
+    : null;
 
   const formattedDate = preferredVisitDate
     ? formatVisitDateId(preferredVisitDate)
@@ -83,7 +97,7 @@ export function BookingScheduleFields({
     (isoDate: string) => {
       onClearFieldError("preferredVisitDate");
       onClearFieldError("preferredVisitTime");
-      if (!isoDate || !isStoreOpenOnIsoDate(isoDate)) {
+      if (!isoDate || !isStoreOpenOnIsoDate(scheduleConfig, isoDate, serviceType)) {
         return;
       }
       onPreferredVisitDateChange(isoDate);
@@ -94,6 +108,8 @@ export function BookingScheduleFields({
       onClearFieldError,
       onPreferredVisitDateChange,
       onPreferredVisitTimeChange,
+      scheduleConfig,
+      serviceType,
     ],
   );
 
@@ -161,11 +177,14 @@ export function BookingScheduleFields({
             <BookingVisitDayPicker
               selectedIsoDate={preferredVisitDate}
               onSelectIsoDate={handleDateSelect}
+              serviceType={serviceType}
             />
-            <p className="mt-2 text-[11px] text-slate-500">
-              Hanya Senin–Kamis &amp; Sabtu (Jaya Plaza). Jumat &amp; Minggu tutup.
-            </p>
+            <p className="mt-2 text-[11px] text-slate-500">{openDaysHint}</p>
           </div>
+        ) : null}
+
+        {selectedDayNote ? (
+          <p className="mt-1 text-xs text-primary">{selectedDayNote}</p>
         ) : null}
 
         {fieldErrors.preferredVisitDate ? (
@@ -187,10 +206,9 @@ export function BookingScheduleFields({
             <BookingVisitDayPicker
               selectedIsoDate={preferredVisitDate}
               onSelectIsoDate={handleDateSelect}
+              serviceType={serviceType}
             />
-            <p className="px-2 pb-2 text-[11px] text-slate-500">
-              Hanya Senin–Kamis &amp; Sabtu (Jaya Plaza). Jumat &amp; Minggu tutup.
-            </p>
+            <p className="px-2 pb-2 text-[11px] text-slate-500">{openDaysHint}</p>
           </>
         ) : null}
       </BottomSheet>

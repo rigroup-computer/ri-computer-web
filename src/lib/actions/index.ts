@@ -27,6 +27,13 @@ export {
 } from "@/src/lib/actions/admin-inventory";
 
 export {
+  saveWeeklySchedule,
+  saveScheduleOverride,
+  deleteScheduleOverride,
+  type AdminScheduleActionResult,
+} from "@/src/lib/actions/admin-schedule";
+
+export {
   loginAdmin,
   logoutAdmin,
   type LoginAdminState,
