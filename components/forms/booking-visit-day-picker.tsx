@@ -15,7 +15,7 @@ import { useScheduleConfig } from "@/components/schedule/schedule-config-provide
 import "./booking-date.style.css";
 
 const NAV_BUTTON_CLASS =
-  "absolute top-4 inline-flex size-9 items-center justify-center rounded-sm border border-slate-300 text-slate-600 hover:bg-slate-50 aria-disabled:cursor-not-allowed aria-disabled:border-slate-200 aria-disabled:text-slate-300 aria-disabled:opacity-50 aria-disabled:hover:bg-transparent";
+  "absolute top-4 z-10 inline-flex size-9 cursor-pointer items-center justify-center rounded-sm border [&_svg]:pointer-events-none border-slate-300 text-slate-600 hover:bg-slate-50 aria-disabled:cursor-not-allowed aria-disabled:border-slate-200 aria-disabled:text-slate-300 aria-disabled:opacity-50 aria-disabled:hover:bg-transparent";
 
 export type BookingVisitDayPickerProps = Readonly<{
   selectedIsoDate: string;
