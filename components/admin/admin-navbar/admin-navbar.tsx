@@ -1,5 +1,6 @@
 "use client";
 
+import { Icon } from "@iconify/react";
 import Image from "next/image";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
@@ -77,7 +78,9 @@ export function AdminBottomNav() {
       aria-label="Navigasi admin"
     >
       <ul className="flex w-full items-stretch gap-0.5">
-        {ADMIN_NAV_VISIBLE_ITEMS.map(({ href, label, spriteCol }) => {
+        {ADMIN_NAV_VISIBLE_ITEMS.map((item) => {
+          const { href, label, icon } = item;
+          const spriteCol = "spriteCol" in item ? item.spriteCol : null;
           const active = linkActive(href, pathname);
           return (
             <li key={href} className="min-w-0 flex-1">
@@ -90,16 +93,26 @@ export function AdminBottomNav() {
                     : "text-mate-black/60 hover:text-mate-black"
                 }`}
               >
-                <span
-                  aria-hidden
-                  className={[
-                    "icon-bundle",
-                    SPRITE_COL_CLASS[spriteCol],
-                    active ? "icon-bundle--active" : "",
-                  ]
-                    .filter(Boolean)
-                    .join(" ")}
-                />
+                {spriteCol === null ? (
+                  <Icon
+                    icon={icon}
+                    width={24}
+                    height={24}
+                    aria-hidden
+                    className={active ? "text-primary" : "text-[#9095a1]"}
+                  />
+                ) : (
+                  <span
+                    aria-hidden
+                    className={[
+                      "icon-bundle",
+                      SPRITE_COL_CLASS[spriteCol],
+                      active ? "icon-bundle--active" : "",
+                    ]
+                      .filter(Boolean)
+                      .join(" ")}
+                  />
+                )}
                 {label}
               </Link>
             </li>

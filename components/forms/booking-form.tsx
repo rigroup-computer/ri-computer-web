@@ -37,6 +37,7 @@ import {
   getBookingFieldToast,
   validateBookingForm,
 } from "@/lib/booking-form-validation";
+import { useScheduleConfig } from "@/components/schedule/schedule-config-provider";
 
 const BookingSuccessPanel = dynamic(
   () =>
@@ -64,6 +65,7 @@ export function BookingForm({
   onSuccessChange?: (isSuccess: boolean) => void;
 }>) {
   const searchParams = useSearchParams();
+  const scheduleConfig = useScheduleConfig();
   const didScrollToForm = useRef(false);
   const issueFileInputRef = useRef<HTMLInputElement>(null);
   const [issueImageUrls, setIssueImageUrls] = useState<string[]>([]);
@@ -234,7 +236,7 @@ export function BookingForm({
                 serviceType === "REGULAR"
                   ? formData.get("customerCity")
                   : undefined,
-            });
+            }, scheduleConfig);
 
             if (!validation.ok) {
               const firstInvalid = firstInvalidFieldError(

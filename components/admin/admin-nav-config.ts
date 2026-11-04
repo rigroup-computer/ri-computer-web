@@ -13,6 +13,12 @@ export const ADMIN_NAV_ITEMS = [
     spriteCol: 1,
   },
   {
+    href: "/admin/schedule",
+    label: "Jadwal",
+    pageTitle: "Jadwal Booking",
+    icon: "mdi:calendar-clock-outline",
+  },
+  {
     href: "/admin/inventory",
     label: "Inventaris",
     pageTitle: "Inventaris & Titip Jual",

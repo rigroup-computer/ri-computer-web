@@ -78,6 +78,36 @@ model InventoryItem {
   updatedAt     DateTime @updatedAt
 }
 
+/// Weekly booking template per service type; weekday 0=Minggu..6=Sabtu (Asia/Jakarta).
+model ScheduleWeeklyRule {
+  id          String      @id @default(cuid())
+  serviceType ServiceType
+  weekday     Int
+  isOpen      Boolean     @default(true)
+  openTime    String
+  closeTime   String
+  slots       String[]    @default([])
+  updatedAt   DateTime    @updatedAt
+
+  @@unique([serviceType, weekday])
+}
+
+/// Per-date exception that replaces the weekly rule; `date` is YYYY-MM-DD (Asia/Jakarta).
+model ScheduleDateOverride {
+  id          String      @id @default(cuid())
+  date        String
+  serviceType ServiceType
+  isOpen      Boolean
+  openTime    String?
+  closeTime   String?
+  slots       String[]    @default([])
+  note        String?
+  updatedAt   DateTime    @updatedAt
+
+  @@unique([date, serviceType])
+  @@index([date])
+}
+
 model RateLimitEntry {
   id           String   @id @default(cuid())
   scope        String

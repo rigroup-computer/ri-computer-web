@@ -5,6 +5,7 @@ import {
   isStoreOpenOnIsoDate,
   isValidVisitTimeSlot,
 } from "@/lib/store-hours";
+import type { ScheduleConfig } from "@/lib/types/schedule";
 
 export const BOOKING_SERVICE_TYPES = ["REGULAR", "DELIVERY"] as const;
 export type BookableServiceType = (typeof BOOKING_SERVICE_TYPES)[number];
@@ -44,7 +45,10 @@ export const contactBaseSchema = z.object({
     .refine((value) => value.length > 0, { message: "empty" }),
 });
 
-function createScheduleFieldsSchema(serviceType: BookableServiceType) {
+function createScheduleFieldsSchema(
+  serviceType: BookableServiceType,
+  config: ScheduleConfig,
+) {
   return z
     .object({
       preferredVisitDate: z.string().trim().min(1),
@@ -66,7 +70,7 @@ function createScheduleFieldsSchema(serviceType: BookableServiceType) {
           path: ["preferredVisitDate"],
         });
       }
-      if (!isStoreOpenOnIsoDate(value.preferredVisitDate)) {
+      if (!isStoreOpenOnIsoDate(config, value.preferredVisitDate, serviceType)) {
         ctx.addIssue({
           code: "custom",
           message: "closed_day",
@@ -82,6 +86,7 @@ function createScheduleFieldsSchema(serviceType: BookableServiceType) {
       }
       if (
         !isValidVisitTimeSlot(
+          config,
           value.preferredVisitDate,
           value.preferredVisitTime,
           new Date(),
@@ -96,6 +101,7 @@ function createScheduleFieldsSchema(serviceType: BookableServiceType) {
       }
       if (
         combineVisitDateTime(
+          config,
           value.preferredVisitDate,
           value.preferredVisitTime,
           serviceType,
@@ -110,21 +116,26 @@ function createScheduleFieldsSchema(serviceType: BookableServiceType) {
     });
 }
 
-export const scheduleFieldsSchema = createScheduleFieldsSchema("REGULAR");
+export function createDeliverySchema(config: ScheduleConfig) {
+  return deviceFieldsSchema
+    .merge(contactBaseSchema)
+    .merge(createScheduleFieldsSchema("DELIVERY", config))
+    .extend({
+      visitAddress: z.string().trim().min(5).max(500),
+    });
+}
 
-export const deliverySchema = deviceFieldsSchema
-  .merge(contactBaseSchema)
-  .merge(createScheduleFieldsSchema("DELIVERY"))
-  .extend({
-    visitAddress: z.string().trim().min(5).max(500),
-  });
+export function createRegularSchema(config: ScheduleConfig) {
+  return deviceFieldsSchema
+    .merge(contactBaseSchema)
+    .merge(createScheduleFieldsSchema("REGULAR", config))
+    .extend({
+      customerCity: z.string().trim().min(2).max(100),
+    });
+}
 
-export const regularSchema = deviceFieldsSchema
-  .merge(contactBaseSchema)
-  .merge(createScheduleFieldsSchema("REGULAR"))
-  .extend({
-    customerCity: z.string().trim().min(2).max(100),
-  });
+export type DeliveryBookingData = z.infer<ReturnType<typeof createDeliverySchema>>;
+export type RegularBookingData = z.infer<ReturnType<typeof createRegularSchema>>;
 
 export const BOOKING_FIELD_LABELS = {
   laptopBrand: "Merek",
@@ -239,7 +250,7 @@ function contextualFieldErrorMessage(
   if (key === "preferredVisitDate" && text.length > 0) {
     const issueMessage = issue.message;
     if (issueMessage === "closed_day") {
-      return "Toko tutup pada hari tersebut. Pilih Senin–Kamis atau Sabtu.";
+      return "Toko tutup pada hari tersebut. Pilih tanggal lain.";
     }
     if (issueMessage === "past_date") {
       return "Tanggal kunjungan tidak boleh di masa lalu.";
@@ -307,13 +318,12 @@ export type BookingFormValues = {
   customerCity?: unknown;
 };
 
-export type BookingFormValidatedData =
-  | z.infer<typeof deliverySchema>
-  | z.infer<typeof regularSchema>;
+export type BookingFormValidatedData = DeliveryBookingData | RegularBookingData;
 
 export function validateBookingForm(
   serviceType: BookableServiceType,
   values: BookingFormValues,
+  config: ScheduleConfig,
 ):
   | { ok: true; data: BookingFormValidatedData }
   | { ok: false; fieldErrors: Record<string, string> } {
@@ -330,11 +340,11 @@ export function validateBookingForm(
 
   const parsed =
     serviceType === "DELIVERY"
-      ? deliverySchema.safeParse({
+      ? createDeliverySchema(config).safeParse({
           ...basePayload,
           visitAddress: values.visitAddress,
         })
-      : regularSchema.safeParse({
+      : createRegularSchema(config).safeParse({
           ...basePayload,
           customerCity: values.customerCity,
         });

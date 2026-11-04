@@ -1,15 +1,16 @@
 "use server";
 
 import { revalidatePath } from "next/cache";
-import type { z } from "zod";
 import type { Prisma, ServiceType } from "@prisma/client";
 import { parseIssueAttachmentUrlsFromFormField } from "@/lib/booking-issue-attachments";
 import { formatIssueWithDeviceSpecs } from "@/lib/order-issue-content";
 import {
   bookingValidationMessage,
-  deliverySchema,
+  createDeliverySchema,
+  createRegularSchema,
   isBookableServiceType,
-  regularSchema,
+  type DeliveryBookingData,
+  type RegularBookingData,
 } from "@/lib/booking-form-validation";
 import { combineVisitDateTime, formatVisitDateTimeId } from "@/lib/store-hours";
 import {
@@ -22,6 +23,7 @@ import {
   normalizePhoneForLookup,
   orderSdk,
 } from "@/src/lib/sdk/orders";
+import { scheduleSdk } from "@/src/lib/sdk/schedule";
 
 function formatIssueWithSpecs(deviceSpecs: string, issue: string): string {
   return formatIssueWithDeviceSpecs(deviceSpecs, issue);
@@ -83,13 +85,15 @@ export async function createServiceOrder(
     issue: formData.get("issue"),
   };
 
+  const scheduleConfig = await scheduleSdk.getConfig();
+
   const parsed =
     serviceType === "DELIVERY"
-      ? deliverySchema.safeParse({
+      ? createDeliverySchema(scheduleConfig).safeParse({
           ...basePayload,
           visitAddress: formData.get("visitAddress"),
         })
-      : regularSchema.safeParse({
+      : createRegularSchema(scheduleConfig).safeParse({
           ...basePayload,
           customerCity: formData.get("customerCity"),
         });
@@ -130,10 +134,11 @@ export async function createServiceOrder(
 
     const visitAddress =
       serviceType === "DELIVERY"
-        ? (parsed.data as z.infer<typeof deliverySchema>).visitAddress
-        : (parsed.data as z.infer<typeof regularSchema>).customerCity;
+        ? (parsed.data as DeliveryBookingData).visitAddress
+        : (parsed.data as RegularBookingData).customerCity;
 
     const preferredVisitAt = combineVisitDateTime(
+      scheduleConfig,
       parsed.data.preferredVisitDate,
       parsed.data.preferredVisitTime,
       serviceType,

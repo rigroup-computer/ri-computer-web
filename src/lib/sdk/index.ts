@@ -31,6 +31,13 @@ export {
 } from "@/src/lib/sdk/marketplace";
 
 export {
+  scheduleSdk,
+  SCHEDULE_CACHE_TAG,
+  type ScheduleOverrideInput,
+  type ScheduleOverrideRow,
+} from "@/src/lib/sdk/schedule";
+
+export {
   rateLimitSdk,
   type RateLimitOptions,
   type RateLimitResult,
